@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "sorcerer",
+	"version": "${version}",
+	"name": "Sorcerer",
+	"description": "Adds the desert Sorcerer, a fang-casting spellcaster with four elemental variants.",
+	"authors": [
+		"Me!"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/sorcerer/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.example.sorcerer.SorcererMod"
+		],
+		"client": [
+			"com.example.sorcerer.client.SorcererModClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"mixins": [
+		"sorcerer.mixins.json"
+	]
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "sorcerer:item/wither_sorcerer_spawn_egg"
+  }
+}
