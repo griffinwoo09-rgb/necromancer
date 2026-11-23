@@ -4,6 +4,7 @@ import com.example.necromancer.ModEntities;
 import com.example.necromancer.entity.Necromancer;
 import com.example.necromancer.entity.NecromancerFangs;
 import com.example.necromancer.entity.NecromancerSkeleton;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -110,10 +111,14 @@ public class NecromancerClientGameTest implements FabricClientGameTest {
 							new net.minecraft.core.BlockPos(56 + i * 2, -59, 65), net.minecraft.core.Direction.NORTH);
 					frame.setItem(all[i].makeShield(level.registryAccess()));
 					level.addFreshEntity(frame);
+					var staffFrame = new net.minecraft.world.entity.decoration.ItemFrame(level,
+							new net.minecraft.core.BlockPos(56 + i * 2, -58, 65), net.minecraft.core.Direction.NORTH);
+					staffFrame.setItem(new net.minecraft.world.item.ItemStack(com.example.necromancer.ModItems.STAFFS.get(i)));
+					level.addFreshEntity(staffFrame);
 				}
 			});
 			context.waitTicks(20);
-			context.takeScreenshot("variant_banner_shields");
+			context.takeScreenshot("variant_banner_shields_and_staffs");
 
 			// staff clearance: one frozen Necromancer per pose, seen side-on from its staff hand, then from the other side
 			server.runCommand("kill @e[type=!player]");
@@ -130,11 +135,25 @@ public class NecromancerClientGameTest implements FabricClientGameTest {
 					n.holdCastPose(poses[i]);
 					level.addFreshEntity(n);
 				}
+				// one more, frozen mid staff-sweep (the sweep is client-side animation, held below)
+				Necromancer sweeper = ModEntities.NECROMANCER.create(level, EntitySpawnReason.COMMAND);
+				sweeper.snapTo(77.5 + poses.length * 3, -60, 80.5, 270.0F, 0.0F);
+				sweeper.setYHeadRot(270.0F);
+				sweeper.setYBodyRot(270.0F);
+				sweeper.setNoAi(true);
+				sweeper.setVariant(NecromancerVariant.FIRE);
+				level.addFreshEntity(sweeper);
 			});
-			server.runCommand("tp @a 82 -59.5 74.5 0 5");
+			context.waitTicks(5);
+			context.runOnClient(mc -> {
+				for (var e : mc.level.entitiesForRendering()) {
+					if (e instanceof Necromancer n && n.getX() > 77.5 + poses.length * 3 - 0.5) n.holdSweepPose(0.62F);
+				}
+			});
+			server.runCommand("tp @a 86 -59.5 73.5 0 5");
 			context.waitTicks(30); // poses ease in over ~5 ticks; the wind-up finishes by ~13
 			context.takeScreenshot("staff_poses_staff_side");
-			server.runCommand("tp @a 82 -59.5 86.5 180 5");
+			server.runCommand("tp @a 86 -59.5 87.5 180 5");
 			context.waitTicks(10);
 			context.takeScreenshot("staff_poses_other_side");
 
@@ -151,6 +170,27 @@ public class NecromancerClientGameTest implements FabricClientGameTest {
 			});
 			context.waitTicks(5);
 			context.takeScreenshot("lightning_shock");
+
+			// a soul skull in flight, seen from the side
+			server.runCommand("kill @e[type=!player]");
+			server.runCommand("summon necromancer:necromancer 120 -60 108 {NoAI:1b,Variant:\"wither\"}");
+			server.runCommand("summon minecraft:pig 120 -60 120 {NoAI:1b}");
+			server.runCommand("tp @a 113 -58.5 113 -90 0");
+			context.waitTicks(20);
+			server.runOnServer(s -> {
+				var level = s.overworld();
+				Necromancer caster = level.getEntities(ModEntities.NECROMANCER, Necromancer::isAlive).getFirst();
+				Pig pig = level.getEntities(net.minecraft.world.entity.EntityTypes.PIG, e -> true).getFirst();
+				caster.fireSoulSkull(level, pig, 0.0F);
+			});
+			context.waitTicks(6);
+			context.takeScreenshot("soul_skull_in_flight");
+
+			// a staff in hand
+			server.runCommand("kill @e[type=!player]");
+			server.runCommand("item replace entity @a weapon.mainhand with necromancer:lightning_necromancer_staff");
+			context.waitTicks(10);
+			context.takeScreenshot("staff_in_hand");
 		}
 	}
 }

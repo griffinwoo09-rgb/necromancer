@@ -10,8 +10,11 @@ public class NecromancerModClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ModelLayerRegistry.registerModelLayer(NecromancerModel.LAYER, NecromancerModel::createBodyLayer);
+		ModelLayerRegistry.registerModelLayer(BoneSpikeModel.LAYER, BoneSpikeModel::createLayer);
+		ModelLayerRegistry.registerModelLayer(SoulSkullRenderer.LAYER, SoulSkullRenderer.SkullModel::createLayer);
 		EntityRenderers.register(ModEntities.NECROMANCER, NecromancerRenderer::new);
 		EntityRenderers.register(ModEntities.NECROMANCER_FANGS, NecromancerFangsRenderer::new);
 		EntityRenderers.register(ModEntities.NECROMANCER_SKELETON, SkeletonRenderer::new);
+		EntityRenderers.register(ModEntities.SOUL_SKULL, SoulSkullRenderer::new);
 	}
 }

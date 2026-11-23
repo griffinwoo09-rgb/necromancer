@@ -4,13 +4,41 @@ package com.example.necromancer;
 public final class NecromancerConfig {
 	private NecromancerConfig() {}
 
-	// Stats (Evoker: 24 health, 0.5 speed, 12 follow range)
-	public static final double MAX_HEALTH = 24.0;
+	// Stats: a mini-boss (Evoker: 24 health, no armor, 0.5 speed, 12 follow range)
+	public static final double MAX_HEALTH = 60.0;
+	public static final double ARMOR = 6.0;
+	public static final double KNOCKBACK_RESISTANCE = 0.3;
 	public static final double MOVEMENT_SPEED = 0.45;
 	public static final double FOLLOW_RANGE = 16.0;
-	public static final int XP_REWARD = 10;
-	/** Flees players closer than this many blocks, like the Evoker. */
-	public static final float FLEE_DISTANCE = 8.0F;
+	public static final int XP_REWARD = 25;
+	/** Backs away from players closer than this, after trying its staff sweep. */
+	public static final float FLEE_DISTANCE = 5.0F;
+
+	// Soul-skull bolt: ranged attack for targets 7-16 blocks away
+	public static final double SOUL_BOLT_MIN_RANGE = 7.0;
+	public static final double SOUL_BOLT_MAX_RANGE = 16.0;
+	public static final int SOUL_BOLT_CAST_TIME = 25;
+	public static final int SOUL_BOLT_COOLDOWN = 80;
+	public static final double SOUL_SKULL_SPEED = 0.6;          // blocks per tick
+	public static final double SOUL_SKULL_TURN_DEGREES = 6.0;   // max homing turn per tick
+	public static final int SOUL_SKULL_LIFETIME = 100;
+	public static final float SOUL_SKULL_DAMAGE = 4.0F;
+
+	// Staff sweep: melee arc for targets within 3 blocks
+	public static final double SWEEP_TRIGGER_RANGE = 3.0;
+	public static final double SWEEP_REACH = 3.5;
+	public static final double SWEEP_ARC_DEGREES = 100.0;
+	public static final int SWEEP_WINDUP = 10;
+	public static final int SWEEP_LENGTH = 16;
+	public static final int SWEEP_COOLDOWN = 60;
+	public static final float SWEEP_DAMAGE = 6.0F;
+	public static final double SWEEP_KNOCKBACK = 1.2;
+
+	// Necromancer's Staff (player item)
+	public static final int STAFF_DURABILITY = 250;
+	public static final int STAFF_COOLDOWN = 40;
+	public static final int STAFF_LINE_SPIKES = 8;
+	public static final int STAFF_RING_SPIKES = 6;
 
 	// Fang spell timing (ticks)
 	public static final int CAST_WARMUP = 20;

@@ -121,10 +121,128 @@ public class NecromancerGameTests {
 		}
 		helper.assertTrue(total.getOrDefault(Items.RAW_GOLD, 0) > 0, "player kills dropped no raw gold: " + total);
 		helper.assertTrue(total.getOrDefault(Items.NETHERITE_SCRAP, 0) > 0, "player kills dropped no netherite scrap: " + total);
+		// 1.3.0 loot: emeralds on every kill, plus bottles o' enchanting and enchanted books on some player kills
+		helper.assertTrue(total.getOrDefault(Items.EMERALD, 0) >= 500, "not every kill dropped emeralds: " + total);
+		helper.assertTrue(total.getOrDefault(Items.EXPERIENCE_BOTTLE, 0) > 0, "no bottles o' enchanting: " + total);
+		helper.assertTrue(total.getOrDefault(Items.ENCHANTED_BOOK, 0) > 0, "no enchanted books: " + total);
 		for (Item witch : List.of(Items.SUGAR, Items.GLASS_BOTTLE, Items.GUNPOWDER, Items.STICK, Items.REDSTONE)) {
 			helper.assertTrue(!total.containsKey(witch), "witch drop " + witch + " still drops: " + total);
 		}
 		helper.succeed();
+	}
+
+	/** The staff is rare (1.5% of player kills) but real: 2,000 fire kills expect ~30, and never another variant's staff. */
+	@GameTest(maxTicks = 40)
+	public void staffsDropRarelyFromTheirOwnVariant(GameTestHelper helper) {
+		floor(helper);
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		java.util.Map<Item, Integer> drops = killAndCollect(helper, NecromancerVariant.FIRE, helper.getLevel().damageSources().playerAttack(player), 2000);
+		int fire = drops.getOrDefault(ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()), 0);
+		helper.assertTrue(fire > 0 && fire < 100, "fire staff drops out of range (expected ~30 in 2000): " + fire);
+		for (Item staff : ModItems.STAFFS) {
+			helper.assertTrue(staff == ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()) || !drops.containsKey(staff), "fire dropped " + staff);
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void necromancerIsAMiniBoss(GameTestHelper helper) {
+		floor(helper);
+		Necromancer n = helper.spawn(ModEntities.NECROMANCER, new BlockPos(2, 1, 2));
+		helper.assertValueEqual(n.getMaxHealth(), 60.0F, "max health");
+		helper.assertValueEqual(n.getHealth(), 60.0F, "spawn health");
+		helper.assertValueEqual(n.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR), 6.0, "armor");
+		helper.succeed();
+	}
+
+	/** Two Necromancers' armies: one army's skeleton can't hurt or provoke the other's. */
+	@GameTest(maxTicks = 60)
+	public void armiesOfDifferentNecromancersNeverFight(GameTestHelper helper) {
+		floor(helper);
+		Necromancer a = helper.spawn(ModEntities.NECROMANCER, new BlockPos(0, 1, 0));
+		Necromancer b = helper.spawn(ModEntities.NECROMANCER, new BlockPos(4, 1, 4));
+		a.setNoAi(true);
+		b.setNoAi(true);
+		NecromancerSkeleton fromA = helper.spawn(ModEntities.NECROMANCER_SKELETON, new BlockPos(1, 1, 1));
+		NecromancerSkeleton fromB = helper.spawn(ModEntities.NECROMANCER_SKELETON, new BlockPos(3, 1, 3));
+		fromA.setSummoner(a);
+		fromB.setSummoner(b);
+		Skeleton wild = helper.spawn(EntityTypes.SKELETON, new BlockPos(2, 1, 4));
+		helper.assertTrue(fromA.isAlliedTo(fromB) && fromB.isAlliedTo(fromA) && fromA.isAlliedTo(b), "army skeletons are not allies");
+		float hp = fromB.getHealth();
+		helper.assertTrue(!fromB.hurtServer(helper.getLevel(), helper.getLevel().damageSources().mobAttack(fromA), 5.0F), "ally hit was accepted");
+		helper.assertTrue(!fromB.hurtServer(helper.getLevel(), helper.getLevel().damageSources().mobAttack(wild), 5.0F), "wild skeleton's stray hit was accepted");
+		helper.assertValueEqual(fromB.getHealth(), hp, "health after ally hits");
+		helper.succeedWhen(() -> {
+			helper.assertTrue(fromB.getTarget() == null || !(fromB.getTarget() instanceof net.minecraft.world.entity.monster.skeleton.AbstractSkeleton),
+					"army skeleton retaliated against an ally: " + fromB.getTarget());
+			helper.assertTrue(fromB.isAlive() && fromA.isAlive(), "an army skeleton died");
+		});
+	}
+
+	/** A soul skull fired well off to the side still curves onto the target and lands its variant effect. */
+	@GameTest(maxTicks = 80)
+	public void soulSkullHomesInAndAppliesItsEffect(GameTestHelper helper) {
+		floor(helper);
+		Necromancer caster = helper.spawn(ModEntities.NECROMANCER, new BlockPos(0, 1, 0));
+		caster.setNoAi(true);
+		caster.setVariant(NecromancerVariant.POISON);
+		Pig pig = helper.spawn(EntityTypes.PIG, new BlockPos(4, 1, 4));
+		pig.setNoAi(true);
+		float start = pig.getHealth();
+		caster.fireSoulSkull(helper.getLevel(), pig, 0.35F); // ~20 degrees off: without homing it misses by about 2 blocks
+		helper.succeedWhen(() -> {
+			helper.assertTrue(pig.hasEffect(MobEffects.POISON), "pig was not poisoned by the skull");
+			helper.assertTrue(pig.getHealth() < start, "pig took no damage from the skull");
+		});
+	}
+
+	@GameTest
+	public void staffSweepHitsOnlyWhatIsInFront(GameTestHelper helper) {
+		floor(helper);
+		Necromancer n = helper.spawn(ModEntities.NECROMANCER, new BlockPos(2, 1, 2));
+		n.setNoAi(true);
+		n.setYRot(0.0F); // facing +z
+		n.setYBodyRot(0.0F);
+		Pig front = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 4));
+		Pig behind = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 0));
+		float hp = front.getHealth();
+		Vec3 before = front.position();
+		int hit = n.sweep(helper.getLevel());
+		helper.assertValueEqual(hit, 1, "entities hit by the sweep");
+		helper.assertTrue(front.getHealth() < hp, "pig in front took no damage");
+		helper.assertTrue(front.getDeltaMovement().z > 0.1, "pig in front was not knocked away: " + front.getDeltaMovement() + " from " + before);
+		helper.assertValueEqual(behind.getHealth(), behind.getMaxHealth(), "pig behind health");
+		helper.succeed();
+	}
+
+	/** A player's staff: spikes owned by the player, cooldown, 1 durability, and they spare the player's own wolf. */
+	@GameTest(maxTicks = 80)
+	public void staffRaisesSpikesThatSparePets(GameTestHelper helper) {
+		for (int x = 0; x < 5; x++) for (int z = 0; z < 9; z++) helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		Vec3 at = helper.absoluteVec(new Vec3(2.5, 1, 0.5));
+		player.snapTo(at.x, at.y, at.z, 0.0F, 0.0F); // facing +z, down the floor
+		helper.getLevel().addFreshEntity(player);
+		net.minecraft.world.entity.animal.wolf.Wolf wolf = helper.spawn(EntityTypes.WOLF, new BlockPos(2, 1, 3));
+		wolf.tame(player);
+		wolf.setNoAi(true);
+		Pig pig = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 6));
+		pig.setNoAi(true);
+		float wolfHp = wolf.getHealth(), pigHp = pig.getHealth();
+		ItemStack staff = new ItemStack(ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()));
+		player.setItemInHand(InteractionHand.MAIN_HAND, staff);
+		staff.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		List<NecromancerFangs> spikes = helper.getLevel().getEntitiesOfClass(NecromancerFangs.class, new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(12.0));
+		helper.assertTrue(spikes.size() >= 6, "staff raised only " + spikes.size() + " spikes");
+		helper.assertTrue(spikes.stream().allMatch(s -> s.getOwner() == player && s.getVariant() == NecromancerVariant.FIRE), "spikes not owned by the player / wrong variant");
+		helper.assertTrue(player.getCooldowns().isOnCooldown(staff), "staff has no cooldown");
+		helper.assertValueEqual(staff.getDamageValue(), 1, "staff damage after one cast");
+		helper.succeedWhen(() -> {
+			helper.assertTrue(pig.getHealth() < pigHp && pig.isOnFire(), "pig in the line was not hit by fire spikes");
+			helper.assertValueEqual(wolf.getHealth(), wolfHp, "tamed wolf health");
+			helper.assertTrue(!wolf.isOnFire(), "tamed wolf was set on fire");
+		});
 	}
 
 	@GameTest(maxTicks = 40)

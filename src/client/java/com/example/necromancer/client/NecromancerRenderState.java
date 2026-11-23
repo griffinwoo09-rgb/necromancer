@@ -14,6 +14,8 @@ public class NecromancerRenderState extends LivingEntityRenderState {
 	public Necromancer.CastPose castPose = Necromancer.CastPose.NONE;
 	/** Ticks into the current cast, with partial tick, for the fang wind-up. */
 	public float castTime;
+	/** 0..1 through a staff sweep, or -1 when not sweeping. */
+	public float sweep = -1.0F;
 	/** Per-entity phase so a group's idle sway doesn't move in lockstep. */
 	public float phase;
 }

@@ -7,12 +7,9 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -28,6 +25,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
@@ -55,6 +53,8 @@ public class Necromancer extends SpellcasterIllager {
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
 				.add(Attributes.MAX_HEALTH, NecromancerConfig.MAX_HEALTH)
+				.add(Attributes.ARMOR, NecromancerConfig.ARMOR)
+				.add(Attributes.KNOCKBACK_RESISTANCE, NecromancerConfig.KNOCKBACK_RESISTANCE)
 				.add(Attributes.MOVEMENT_SPEED, NecromancerConfig.MOVEMENT_SPEED)
 				.add(Attributes.FOLLOW_RANGE, NecromancerConfig.FOLLOW_RANGE);
 	}
@@ -64,9 +64,11 @@ public class Necromancer extends SpellcasterIllager {
 		super.registerGoals();
 		this.goalSelector.addGoal(0, new FloatGoal(this));
 		this.goalSelector.addGoal(1, new SpellcasterCastingSpellGoal());
-		this.goalSelector.addGoal(2, new AvoidEntityGoal<>(this, Player.class, NecromancerConfig.FLEE_DISTANCE, 0.6, 1.0));
+		this.goalSelector.addGoal(2, new StaffSweepGoal());
+		this.goalSelector.addGoal(3, new AvoidEntityGoal<>(this, Player.class, NecromancerConfig.FLEE_DISTANCE, 0.6, 1.0));
 		this.goalSelector.addGoal(4, new SummonSkeletonsGoal());
 		this.goalSelector.addGoal(5, new AuraSpellGoal());
+		this.goalSelector.addGoal(5, new SoulBoltGoal());
 		this.goalSelector.addGoal(6, new FangSpellGoal());
 		this.goalSelector.addGoal(8, new WaterAvoidingRandomStrollGoal(this, 0.6));
 		this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -155,7 +157,7 @@ public class Necromancer extends SpellcasterIllager {
 	}
 
 	/** Which body pose a spell uses; NONE when not casting. Client animation only. */
-	public enum CastPose { NONE, FANGS, SUMMON, AURA }
+	public enum CastPose { NONE, FANGS, SUMMON, AURA, BOLT }
 
 	// client-only animation state: eased in/out so poses blend instead of snapping
 	private float castAnim, prevCastAnim;
@@ -196,6 +198,7 @@ public class Necromancer extends SpellcasterIllager {
 			case FANGS -> IllagerSpell.FANGS;
 			case SUMMON -> IllagerSpell.SUMMON_VEX;
 			case AURA -> IllagerSpell.DISAPPEAR;
+			case BOLT -> IllagerSpell.WOLOLO;
 		});
 	}
 
@@ -204,9 +207,158 @@ public class Necromancer extends SpellcasterIllager {
 		return switch (getCurrentSpell()) {
 			case FANGS -> CastPose.FANGS;
 			case SUMMON_VEX -> CastPose.SUMMON;
+			case WOLOLO -> CastPose.BOLT;
 			case DISAPPEAR -> CastPose.AURA;
 			default -> CastPose.FANGS;
 		};
+	}
+
+	/** Entity event telling clients a staff sweep just started (for the swing animation). */
+	private static final byte SWEEP_EVENT = 71;
+	/** Client: tickCount when the last sweep started; MIN_VALUE when none. */
+	private int clientSweepStart = Integer.MIN_VALUE;
+	/** Client, screenshot test only: when >= 0, the sweep pose is frozen at this progress. */
+	private float heldSweep = -1.0F;
+
+	@Override
+	public void handleEntityEvent(byte id) {
+		if (id == SWEEP_EVENT) clientSweepStart = this.tickCount;
+		else super.handleEntityEvent(id);
+	}
+
+	/** 0..1 through the staff sweep (wind-up, strike, follow-through), or -1 when not sweeping. Client side. */
+	public float sweepProgress(float partialTick) {
+		if (heldSweep >= 0.0F) return heldSweep;
+		float t = (this.tickCount - clientSweepStart + partialTick) / NecromancerConfig.SWEEP_LENGTH;
+		return t >= 0.0F && t <= 1.0F ? t : -1.0F;
+	}
+
+	/** Client, screenshot test only: freeze the sweep pose at {@code progress} (negative to release). */
+	public void holdSweepPose(float progress) {
+		heldSweep = progress;
+	}
+
+	/**
+	 * Up close: a wide horizontal swing of the staff that hits everything in an arc in front and knocks it back.
+	 * Gives the Necromancer an answer to melee instead of only backing away.
+	 */
+	class StaffSweepGoal extends Goal {
+		private int ticks;
+		private int nextSweep;
+
+		StaffSweepGoal() {
+			setFlags(java.util.EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+		}
+
+		@Override
+		public boolean canUse() {
+			LivingEntity target = getTarget();
+			double r = NecromancerConfig.SWEEP_TRIGGER_RANGE;
+			return target != null && target.isAlive() && !isCastingSpell() && tickCount >= nextSweep && distanceToSqr(target) < r * r;
+		}
+
+		@Override
+		public boolean canContinueToUse() {
+			return ticks < NecromancerConfig.SWEEP_LENGTH && isAlive();
+		}
+
+		@Override
+		public void start() {
+			ticks = 0;
+			getNavigation().stop();
+			level().broadcastEntityEvent(Necromancer.this, SWEEP_EVENT);
+			playSound(SoundEvents.SKELETON_AMBIENT, 1.0F, 0.6F);
+		}
+
+		@Override
+		public void tick() {
+			LivingEntity target = getTarget();
+			if (target != null) getLookControl().setLookAt(target, 30.0F, 30.0F);
+			if (++ticks == NecromancerConfig.SWEEP_WINDUP && level() instanceof ServerLevel server) sweep(server);
+		}
+
+		@Override
+		public void stop() {
+			nextSweep = tickCount + NecromancerConfig.SWEEP_COOLDOWN;
+		}
+	}
+
+	/** The strike of the staff sweep. Public for tests. */
+	public int sweep(ServerLevel server) {
+		double reach = NecromancerConfig.SWEEP_REACH;
+		double halfArc = Math.cos(Math.toRadians(NecromancerConfig.SWEEP_ARC_DEGREES / 2.0));
+		Vec3 facing = Vec3.directionFromRotation(0.0F, getYRot());
+		int hit = 0;
+		for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(reach, 1.0, reach),
+				e -> e != this && e.isAlive() && !e.isSpectator() && !isAlliedTo(e))) {
+			Vec3 to = new Vec3(e.getX() - getX(), 0.0, e.getZ() - getZ());
+			if (to.lengthSqr() > reach * reach || to.lengthSqr() < 1.0E-4 || to.normalize().dot(facing) < halfArc) continue;
+			if (e.hurtServer(server, damageSources().mobAttack(this), NecromancerConfig.SWEEP_DAMAGE)) {
+				Vec3 push = to.normalize().scale(NecromancerConfig.SWEEP_KNOCKBACK * (1.0 - e.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)));
+				e.push(push.x, 0.35, push.z);
+				e.needsSync = true;
+				hit++;
+			}
+		}
+		// swoosh: variant particles along the arc in front
+		for (int i = 0; i <= 8; i++) {
+			float a = getYRot() + (float) ((i / 8.0 - 0.5) * NecromancerConfig.SWEEP_ARC_DEGREES);
+			Vec3 p = Vec3.directionFromRotation(0.0F, a).scale(2.2);
+			server.sendParticles(getVariant().particle(), getX() + p.x, getY() + 1.1, getZ() + p.z, 2, 0.05, 0.1, 0.05, 0.01);
+		}
+		server.sendParticles(ParticleTypes.SWEEP_ATTACK, getX() + facing.x * 1.6, getY() + 1.1, getZ() + facing.z * 1.6, 1, 0, 0, 0, 0);
+		playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 0.7F);
+		return hit;
+	}
+
+	/** At range: lobs homing soul skulls (two on Hard) from the staff orb. */
+	class SoulBoltGoal extends SpellcasterUseSpellGoal {
+		@Override
+		public boolean canUse() {
+			LivingEntity target = getTarget();
+			if (!super.canUse() || target == null) return false;
+			double d = distanceToSqr(target), min = NecromancerConfig.SOUL_BOLT_MIN_RANGE, max = NecromancerConfig.SOUL_BOLT_MAX_RANGE;
+			return d >= min * min && d <= max * max && hasLineOfSight(target);
+		}
+
+		@Override
+		protected void performSpellCasting() {
+			LivingEntity target = getTarget();
+			if (target == null || !(level() instanceof ServerLevel server)) return;
+			int count = server.getDifficulty() == net.minecraft.world.Difficulty.HARD ? 2 : 1;
+			for (int i = 0; i < count; i++) fireSoulSkull(server, target, (i - (count - 1) * 0.5F) * 0.35F);
+		}
+
+		@Override
+		protected int getCastingTime() {
+			return NecromancerConfig.SOUL_BOLT_CAST_TIME;
+		}
+
+		@Override
+		protected int getCastingInterval() {
+			return NecromancerConfig.SOUL_BOLT_COOLDOWN;
+		}
+
+		@Override
+		protected SoundEvent getSpellPrepareSound() {
+			return SoundEvents.EVOKER_PREPARE_ATTACK;
+		}
+
+		@Override
+		protected IllagerSpell getSpell() {
+			return IllagerSpell.WOLOLO;
+		}
+	}
+
+	/** Fires one soul skull from in front of the staff orb toward {@code target}, fanned sideways by {@code spread} radians. Public for tests. */
+	public SoulSkull fireSoulSkull(ServerLevel server, LivingEntity target, float spread) {
+		Vec3 facing = Vec3.directionFromRotation(0.0F, this.yBodyRot);
+		Vec3 from = new Vec3(getX() + facing.x * 0.8, getY() + 2.3, getZ() + facing.z * 0.8);
+		Vec3 dir = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(from).yRot(spread);
+		SoulSkull skull = new SoulSkull(server, this, from.x, from.y, from.z, dir, target, getVariant());
+		server.addFreshEntity(skull);
+		playSound(SoundEvents.WITHER_SHOOT, 0.6F, 1.5F);
+		return skull;
 	}
 
 	/** Ring of the variant's effect around itself when a target comes close. */
@@ -335,29 +487,8 @@ public class Necromancer extends SpellcasterIllager {
 			}
 		}
 
-		/** Walks down from maxY to find a floor; skips the fang if there is none above minY. */
 		private void spawnFang(double x, double z, double minY, double maxY, float yRot, int warmup) {
-			Level level = level();
-			BlockPos pos = BlockPos.containing(x, maxY, z);
-			double floorOffset = 0.0;
-			boolean found = false;
-			do {
-				BlockPos below = pos.below();
-				if (level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)) {
-					if (!level.isEmptyBlock(pos)) {
-						VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);
-						if (!shape.isEmpty()) floorOffset = shape.max(Direction.Axis.Y);
-					}
-					found = true;
-					break;
-				}
-				pos = below;
-			} while (pos.getY() >= Mth.floor(minY) - 1);
-
-			if (found) {
-				level.addFreshEntity(new NecromancerFangs(level, x, pos.getY() + floorOffset, z, yRot, warmup, Necromancer.this, getVariant()));
-				level.gameEvent(GameEvent.ENTITY_PLACE, new Vec3(x, pos.getY() + floorOffset, z), GameEvent.Context.of(Necromancer.this));
-			}
+			NecromancerFangs.place(level(), x, z, minY, maxY, yRot, warmup, Necromancer.this, getVariant());
 		}
 	}
 

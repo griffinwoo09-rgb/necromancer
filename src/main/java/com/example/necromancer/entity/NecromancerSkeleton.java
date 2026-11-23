@@ -17,6 +17,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.SpearUseGoal;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -91,6 +92,23 @@ public class NecromancerSkeleton extends Skeleton {
 	protected void readAdditionalSaveData(ValueInput input) {
 		super.readAdditionalSaveData(input);
 		this.summoner = input.read("Summoner", UUIDUtil.CODEC).orElse(null);
+	}
+
+	/**
+	 * Every skeleton and Necromancer is on the same side, whichever Necromancer raised it. Vanilla targeting skips allies,
+	 * so armies of two Necromancers never pick each other (or retaliate against each other) as targets.
+	 */
+	@Override
+	protected boolean considersEntityAsAlly(Entity other) {
+		return other instanceof AbstractSkeleton || other instanceof Necromancer || super.considersEntityAsAlly(other);
+	}
+
+	/** No friendly fire: a spear charge or stray arrow from an ally does nothing, so it can't start a brawl either. */
+	@Override
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		Entity attacker = source.getEntity() != null ? source.getEntity() : source.getDirectEntity();
+		if (attacker != null && attacker != this && isAlliedTo(attacker)) return false;
+		return super.hurtServer(level, source, amount);
 	}
 
 	private boolean hasShield() {

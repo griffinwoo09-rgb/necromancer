@@ -169,6 +169,7 @@ public class NecromancerModel extends EntityModel<NecromancerRenderState> {
 
 		if (state.flourish > 0.0F) flourish(state.flourish);
 		if (state.castBlend > 0.0F) castPose(state, age);
+		if (state.sweep >= 0.0F) sweep(state.sweep);
 		if (state.hasRedOverlay) {
 			// flinch: skull snaps back, shoulders recoil
 			head.xRot -= 0.25F;
@@ -203,6 +204,28 @@ public class NecromancerModel extends EntityModel<NecromancerRenderState> {
 		head.xRot -= 0.5F * arc;
 	}
 
+	/**
+	 * Staff sweep, 0..1: wind up with the staff held level and drawn across the body to the left (~0.6),
+	 * whip it round to the right through the strike (0.6-0.75), follow through and recover.
+	 */
+	private void sweep(float t) {
+		float windup = Mth.clamp(t / 0.6F, 0.0F, 1.0F);
+		float strike = Mth.clamp((t - 0.6F) / 0.15F, 0.0F, 1.0F);
+		float recover = Mth.clamp((t - 0.8F) / 0.2F, 0.0F, 1.0F);
+		float in = Math.min(1.0F, t * 5.0F) * (1.0F - recover);   // blend in fast, out over the recovery
+		float swing = Mth.lerp(strike * strike * (3.0F - 2.0F * strike), -0.9F * windup, 1.1F);
+		rightArm.xRot = Mth.lerp(in, rightArm.xRot, -1.45F);
+		rightArm.yRot = Mth.lerp(in, rightArm.yRot, swing);
+		rightArm.zRot = Mth.lerp(in, rightArm.zRot, 0.1F);
+		staffUpright(-1.35F * in);                                // staff held out level, like a scythe
+		body.yRot = Mth.lerp(in, body.yRot, swing * 0.35F);       // the torso twists with the swing
+		head.yRot += swing * 0.15F * in;
+		leftArm.xRot = Mth.lerp(in, leftArm.xRot, -0.5F);
+		leftArm.zRot = Mth.lerp(in, leftArm.zRot, -0.6F + swing * 0.2F);
+		cape.xRot = Mth.lerp(in, cape.xRot, 0.3F + strike * 0.25F);
+		robe.zRot += -swing * 0.08F * in;
+	}
+
 	/** Blends from the current pose into the spell's own pose by {@code castBlend}. */
 	private void castPose(NecromancerRenderState s, float age) {
 		float b = s.castBlend;
@@ -220,6 +243,21 @@ public class NecromancerModel extends EntityModel<NecromancerRenderState> {
 				robeX = 0.2F + Mth.sin(age * 0.9F) * 0.06F;
 				capeX = 0.28F + Mth.sin(age * 0.6F) * 0.08F;
 				staffLean = 0.0F;
+				staffDrop = 0.0F;
+			}
+			case BOLT -> {
+				// staff levelled at the target like a wand, free hand cupped beside the orb gathering the skull,
+				// then a sharp recoil as it is released (the spell fires ~20 ticks in)
+				float recoil = Mth.clamp((s.castTime - 20.0F) / 3.0F, 0.0F, 1.0F) * Mth.clamp((26.0F - s.castTime) / 3.0F, 0.0F, 1.0F);
+				rArm = -1.55F + recoil * 0.45F;
+				rArmZ = 0.05F;
+				lArm = -1.35F + Mth.sin(age * 0.8F) * 0.1F + recoil * 0.3F;
+				lArmZ = 0.35F;                 // reaching across toward the staff head
+				headTilt = -0.1F + recoil * 0.15F;
+				bodyX = 0.05F - recoil * 0.12F;
+				robeX = 0.1F + Mth.sin(age * 0.9F) * 0.05F;
+				capeX = 0.22F + Mth.sin(age * 0.6F) * 0.06F + recoil * 0.15F;
+				staffLean = -1.25F;            // tipped almost level, orb pointing at the target
 				staffDrop = 0.0F;
 			}
 			case AURA -> {

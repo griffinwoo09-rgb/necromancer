@@ -4,6 +4,58 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.3.0] - 2026-11-22 — The Bone & Soul update
+
+Necromancers become real mini-bosses with their own attacks, worthwhile loot, and a rare staff you can wield yourself.
+
+### ⚠️ Upgrade notes
+- No breaking changes. Replace `necromancer-1.2.1-fabric-0.19.5.jar` with `necromancer-1.3.0-fabric-0.19.5.jar`.
+- **Necromancers already in a world keep their old 24 health.** Only ones spawned after the update get 60 health and armor.
+- Bone spikes keep the old entity ID (`necromancer:necromancer_fangs`), so commands and worlds still work.
+
+### Added
+- **Necromancer's Staff**, one per variant. A rare drop: 1.5% of player kills from that variant, +0.5% per Looting level.
+  - **Right-click:** raise a line of 8 bone spikes where you look.
+  - **Sneak + right-click:** raise a ring of 6 around you.
+  - Spikes carry the variant's effect (knockback, fire, Wither, Poison, or lightning shock), and never hurt you or your own tamed pets.
+  - **Balance:** 2-second cooldown shared by all staffs, 250 durability (1 per cast), weak in melee (3 damage, slow). Rare (aqua name).
+  - **Enchanting:** takes Unbreaking, Mending and Curse of Vanishing. Repair by combining two staffs on an anvil.
+  - Found in the Combat creative tab, after the trident.
+- **Soul-skull bolt.** At 7–16 blocks, the Necromancer levels its staff and lobs a small glowing skull.
+  - The skull turns gently toward you, so you can sidestep it.
+  - It deals 4 damage plus the variant's effect, and can be punched back like a ghast fireball.
+  - It fires two at once on Hard.
+- **Staff sweep.** Anyone within 3 blocks gets a wide horizontal swing of the staff: 6 damage, strong knockback and a particle swoosh, every 3 seconds. It now fights back up close instead of only backing away.
+- **New animations:**
+  - **Bolt pose:** staff levelled like a wand, free hand gathering the skull, recoil on release.
+  - **Sweep:** staff drawn across the body, then whipped round with a torso twist and follow-through.
+- **Better loot.** Every kill drops 1–3 emeralds. Player kills can also drop (Looting raises every chance):
+
+  | Drop | Chance |
+  |---|---|
+  | Bottles o' Enchanting | 30% |
+  | Enchanted book | 6% |
+  | Golden apple | 4% |
+  | Diamond | 3% |
+
+  This is on top of the totem, raw gold, netherite scrap and variant drops.
+- **New automated tests (29 total):**
+  - The two armies never fight.
+  - Mini-boss stats.
+  - The soul skull homes in and applies its effect.
+  - The sweep only hits what's in front.
+  - The staff casts owned spikes with a cooldown and durability cost, and spares your tamed wolf.
+  - The staff drop rate is right.
+  - The new loot drops.
+- **Screenshot test:** now covers bone spikes, a soul skull in flight, the bolt and sweep poses, and the staffs in item frames and in hand.
+
+### Changed
+- **Mini-boss stats.** 60 health (was 24), 6 armor, 30% knockback resistance, 25 XP (was 10). It now backs away from players at 5 blocks instead of 8, after trying its sweep.
+- **Bone spikes replace the Evoker fangs.** Clusters of jagged bone shards burst out of the ground with bone splinters and a dry crack, rattle, then sink back. Their tips glow in the variant's colour. Same line and ring patterns, timing and damage as before.
+
+### Fixed
+- **Skeleton armies fighting each other.** With several Necromancers around, one army's skeleton could hit another's (a spear charge through the crowd, or a stray arrow from a wild skeleton). The victim then retaliated, and the armies brawled. All skeletons and Necromancers are now on the same side, ally hits do nothing, and they never pick each other as targets.
+
 ## [1.2.1] - 2026-11-22 — Maintenance
 
 Fixes from a code audit. Gameplay is unchanged.
@@ -134,6 +186,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.3.0]: ../../releases/tag/v1.3.0
 [1.2.1]: ../../releases/tag/v1.2.1
 [1.2.0]: ../../releases/tag/v1.2.0
 [1.1.0]: ../../releases/tag/v1.1.0

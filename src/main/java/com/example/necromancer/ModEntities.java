@@ -3,6 +3,7 @@ package com.example.necromancer;
 import com.example.necromancer.entity.Necromancer;
 import com.example.necromancer.entity.NecromancerFangs;
 import com.example.necromancer.entity.NecromancerSkeleton;
+import com.example.necromancer.entity.SoulSkull;
 import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
@@ -32,6 +33,9 @@ public final class ModEntities {
 
 	public static final EntityType<NecromancerSkeleton> NECROMANCER_SKELETON = register("necromancer_skeleton",
 			EntityType.Builder.of(NecromancerSkeleton::new, MobCategory.MONSTER).sized(0.6F, 1.99F).eyeHeight(1.74F).clientTrackingRange(8));
+
+	public static final EntityType<SoulSkull> SOUL_SKULL = register("soul_skull",
+			EntityType.Builder.<SoulSkull>of(SoulSkull::new, MobCategory.MISC).sized(0.375F, 0.375F).clientTrackingRange(4).updateInterval(1));
 
 	private static <T extends net.minecraft.world.entity.Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
 		ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(NecromancerMod.MOD_ID, name));

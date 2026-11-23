@@ -203,7 +203,59 @@ def egg(name, robe, shadow, glow):
     write_png(os.path.join(ROOT, "item", name + "_necromancer_spawn_egg.png"), 16, 16, px)
 
 
+def bone_spike():
+    """32x32 bone spike (UVs match BoneSpikeModel): cracked bone shaft at (0,0) 2x12x2, sharp tip at (0,16) 1x3x1.
+    The glow map lights the tip and the top of the shaft; the renderer tints it with the variant colour."""
+    c = Canvas("bone_spike")
+    c.px = [[CLEAR] * 32 for _ in range(32)]
+    c.glow = [[CLEAR] * 32 for _ in range(32)]
+    def shaft(f, x, y, w, h):
+        if f == "bottom":
+            return c.col(BONE_DARK)
+        crack = f != "top" and (x + y * 3) % 7 == 0
+        return c.col(BONE_DARK if crack else BONE, 1.08 - 0.25 * y / max(1, h - 1))
+    c.box(0, 0, 2, 12, 2, shaft)
+    c.box(0, 16, 1, 3, 1, lambda f, x, y, w, h: c.col(BONE, 1.15 - 0.1 * y))
+    white = (255, 255, 255)
+    for f, (x0, y0, w, h) in faces(0, 16, 1, 3, 1).items():
+        for y in range(h):
+            for x in range(w):
+                c.glow[y0 + y][x0 + x] = white + (255,)
+    for f in ("front", "back", "left", "right"):
+        x0, y0, w, h = faces(0, 0, 2, 12, 2)[f]
+        for x in range(w):
+            c.glow[y0][x0 + x] = white + (200,)
+            if (x + 1) % 2:
+                c.glow[y0 + 1][x0 + x] = white + (120,)
+    write_png(os.path.join(ROOT, "entity", "bone_spike.png"), 32, 32, c.px)
+    write_png(os.path.join(ROOT, "entity", "bone_spike_glow.png"), 32, 32, c.glow)
+
+
+def staff_item(name, robe, shadow, glow):
+    """16x16 held staff: dark shaft rising bottom-left to top-right, leather grip, silver collar, glowing orb."""
+    rng = random.Random(name + "staff")
+    px = [[CLEAR] * 16 for _ in range(16)]
+    shade = lambda col, k=1.0: tuple(max(0, min(255, int(v * k) + rng.randint(-6, 6))) for v in col) + (255,)
+    for i in range(1, 12):  # shaft, 2 px thick along the diagonal
+        x, y = i, 15 - i
+        grip = 3 <= i <= 5
+        px[y][x] = shade(LEATHER if grip else STAFF_GRAIN, 1.0)
+        if x + 1 <= 15:
+            px[y][x + 1] = shade(LEATHER if grip else STAFF, 0.75)
+    px[15][0] = shade(SILVER, 1.0); px[14][1] = shade(SILVER, 0.9)        # ferrule
+    px[4][11] = shade(SILVER, 1.0); px[4][12] = shade(SILVER, 0.8)        # collar
+    px[3][11] = shade(SILVER, 0.9)
+    for (x, y) in ((12, 1), (13, 1), (11, 2), (12, 2), (13, 2), (14, 2), (12, 3), (13, 3), (14, 3), (13, 4)):  # orb
+        px[y][x] = glow + (255,)
+    px[2][12] = (255, 255, 255, 255)                                       # highlight
+    for (x, y) in ((11, 0), (14, 0), (15, 1), (15, 4), (10, 3)):           # sparks around the orb
+        px[y][x] = tuple(min(255, v + 40) for v in glow) + (255,)
+    write_png(os.path.join(ROOT, "item", name + "_necromancer_staff.png"), 16, 16, px)
+
+
 for n, (r, s, g) in VARIANTS.items():
     skin(n, r, s, g)
     egg(n, r, s, g)
+    staff_item(n, r, s, g)
+bone_spike()
 print("ok")
