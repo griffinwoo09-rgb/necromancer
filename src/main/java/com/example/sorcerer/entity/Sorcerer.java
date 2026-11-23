@@ -346,6 +346,7 @@ public class Sorcerer extends SpellcasterIllager {
 			if (!server.noCollision(skeleton)) continue;
 			skeleton.finalizeSpawn(server, server.getCurrentDifficultyAt(pos), EntitySpawnReason.MOB_SUMMONED, null);
 			skeleton.equipForArmy(shieldBearerLeft);
+			skeleton.setSummoner(this);
 			shieldBearerLeft = false;
 			skeleton.setTarget(getTarget());
 			server.addFreshEntityWithPassengers(skeleton);
@@ -366,6 +367,25 @@ public class Sorcerer extends SpellcasterIllager {
 		} else if (!Double.isNaN(hoverBaseY)) {
 			hoverBaseY = Double.NaN;
 			resetFallDistance();
+		}
+	}
+
+	/** Shared drops (totem, raw gold, netherite scrap) plus the variant's own table. */
+	@Override
+	protected void dropFromLootTable(ServerLevel level, DamageSource source, boolean playerKill) {
+		super.dropFromLootTable(level, source, playerKill);
+		dropFromLootTable(level, source, playerKill, getVariant().lootTable());
+	}
+
+	/** Its summoned army crumbles with it. */
+	@Override
+	public void die(DamageSource source) {
+		super.die(source);
+		if (level() instanceof ServerLevel server) {
+			for (SorcererSkeleton skeleton : server.getEntitiesOfClass(SorcererSkeleton.class, getBoundingBox().inflate(48.0),
+					s -> s.isSummonedBy(this))) {
+				skeleton.crumble(server);
+			}
 		}
 	}
 

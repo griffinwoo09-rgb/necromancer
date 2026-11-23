@@ -1,6 +1,13 @@
 package com.example.sorcerer.entity;
 
 import com.example.sorcerer.SorcererConfig;
+import java.util.UUID;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -40,6 +47,50 @@ public class SorcererSkeleton extends Skeleton {
 			}
 		});
 		this.goalSelector.addGoal(3, new RaiseShieldGoal());
+	}
+
+	/** The Sorcerer that raised this skeleton; null for ones spawned any other way, which never crumble. */
+	private UUID summoner;
+	/** Consecutive once-a-second checks that found no living summoner. */
+	private int orphanChecks;
+
+	public void setSummoner(Sorcerer sorcerer) {
+		this.summoner = sorcerer.getUUID();
+	}
+
+	public boolean isSummonedBy(Sorcerer sorcerer) {
+		return sorcerer.getUUID().equals(summoner);
+	}
+
+	/** Falls apart in a puff of soul smoke, dropping nothing. */
+	public void crumble(ServerLevel level) {
+		level.sendParticles(ParticleTypes.SOUL, getX(), getY() + 1.0, getZ(), 12, 0.3, 0.6, 0.3, 0.02);
+		level.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.8, getZ(), 8, 0.3, 0.5, 0.3, 0.02);
+		playSound(SoundEvents.SKELETON_DEATH, 0.8F, 1.3F);
+		discard();
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		// summoner gone (killed out of range, unloaded, /kill'd): the army goes too after ~5 s
+		if (summoner != null && this.tickCount % 20 == 0 && level() instanceof ServerLevel server) {
+			Entity owner = server.getEntity(summoner);
+			orphanChecks = owner instanceof Sorcerer s && s.isAlive() ? 0 : orphanChecks + 1;
+			if (orphanChecks >= SorcererConfig.ORPHAN_CRUMBLE_SECONDS) crumble(server);
+		}
+	}
+
+	@Override
+	protected void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		if (summoner != null) output.store("Summoner", UUIDUtil.CODEC, summoner);
+	}
+
+	@Override
+	protected void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		this.summoner = input.read("Summoner", UUIDUtil.CODEC).orElse(null);
 	}
 
 	private boolean hasShield() {

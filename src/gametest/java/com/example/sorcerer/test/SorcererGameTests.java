@@ -39,6 +39,9 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
 
 /** Each variant's fang bites a pig; the test passes once the variant's effect shows up. */
 public class SorcererGameTests {
@@ -72,7 +75,76 @@ public class SorcererGameTests {
 		LootTable table = helper.getLevel().getServer().reloadableRegistries()
 				.getLootTable(ModEntities.SORCERER.getDefaultLootTable().orElseThrow());
 		helper.assertTrue(table != LootTable.EMPTY, "sorcerer loot table is missing");
+		for (SorcererVariant variant : SorcererVariant.values()) {
+			helper.assertTrue(helper.getLevel().getServer().reloadableRegistries().getLootTable(variant.lootTable()) != LootTable.EMPTY,
+					variant + " loot table is missing");
+		}
 		helper.succeed();
+	}
+
+	/** Kills 100 of each variant with a player's hit and checks what actually lands on the ground. */
+	@GameTest(maxTicks = 40)
+	public void playerKillsDropGoldScrapAndVariantLoot(GameTestHelper helper) {
+		floor(helper);
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		java.util.Map<SorcererVariant, Item> signature = java.util.Map.of(
+				SorcererVariant.WIND, Items.WIND_CHARGE, SorcererVariant.FIRE, Items.BLAZE_POWDER,
+				SorcererVariant.WITHER, Items.BONE, SorcererVariant.POISON, Items.SPIDER_EYE);
+		java.util.Map<Item, Integer> total = new java.util.HashMap<>();
+		for (SorcererVariant variant : SorcererVariant.values()) {
+			java.util.Map<Item, Integer> drops = killAndCollect(helper, variant, helper.getLevel().damageSources().playerAttack(player), 100);
+			helper.assertTrue(drops.getOrDefault(signature.get(variant), 0) >= 100, variant + " did not drop its " + signature.get(variant) + ": " + drops);
+			drops.forEach((item, n) -> total.merge(item, n, Integer::sum));
+		}
+		helper.assertTrue(total.getOrDefault(Items.RAW_GOLD, 0) > 0, "400 player kills dropped no raw gold: " + total);
+		helper.assertTrue(total.getOrDefault(Items.NETHERITE_SCRAP, 0) > 0, "400 player kills dropped no netherite scrap: " + total);
+		for (Item witch : List.of(Items.GLOWSTONE_DUST, Items.SUGAR, Items.GLASS_BOTTLE, Items.GUNPOWDER, Items.STICK, Items.REDSTONE)) {
+			helper.assertTrue(!total.containsKey(witch), "witch drop " + witch + " still drops: " + total);
+		}
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 40)
+	public void nonPlayerKillsDropNoGoldOrScrap(GameTestHelper helper) {
+		floor(helper);
+		java.util.Map<Item, Integer> drops = killAndCollect(helper, SorcererVariant.FIRE, helper.getLevel().damageSources().magic(), 200);
+		helper.assertTrue(!drops.containsKey(Items.RAW_GOLD) && !drops.containsKey(Items.NETHERITE_SCRAP) && !drops.containsKey(Items.TOTEM_OF_UNDYING),
+				"rare drops came from a non-player kill: " + drops);
+		helper.assertTrue(drops.getOrDefault(Items.BLAZE_POWDER, 0) > 0, "variant drop missing on a non-player kill: " + drops);
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 40)
+	public void armyCrumblesWhenSorcererDies(GameTestHelper helper) {
+		floor(helper);
+		Sorcerer caster = helper.spawn(ModEntities.SORCERER, new BlockPos(2, 1, 2));
+		caster.setNoAi(true);
+		helper.assertTrue(caster.summonSkeletons(helper.getLevel()) > 0, "no skeletons were summoned");
+		SorcererSkeleton bystander = helper.spawn(ModEntities.SORCERER_SKELETON, new BlockPos(4, 1, 4)); // not summoned by it
+		caster.hurtServer(helper.getLevel(), helper.getLevel().damageSources().magic(), 1000.0F);
+		helper.succeedWhen(() -> {
+			List<SorcererSkeleton> left = helper.getLevel().getEntitiesOfClass(SorcererSkeleton.class, caster.getBoundingBox().inflate(8.0));
+			helper.assertValueEqual(left.size(), 1, "skeletons left after the Sorcerer died");
+			helper.assertTrue(left.getFirst() == bystander, "the wrong skeleton survived");
+		});
+	}
+
+	private static java.util.Map<Item, Integer> killAndCollect(GameTestHelper helper, SorcererVariant variant, DamageSource source, int kills) {
+		AABB area = new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(6.0);
+		helper.getLevel().getEntitiesOfClass(ItemEntity.class, area).forEach(e -> e.discard());
+		for (int i = 0; i < kills; i++) {
+			Sorcerer s = helper.spawn(ModEntities.SORCERER, new BlockPos(2, 1, 2));
+			s.setNoAi(true);
+			s.setVariant(variant);
+			s.hurtServer(helper.getLevel(), source, 1000.0F);
+			s.discard();
+		}
+		java.util.Map<Item, Integer> drops = new java.util.HashMap<>();
+		for (ItemEntity e : helper.getLevel().getEntitiesOfClass(ItemEntity.class, area)) {
+			drops.merge(e.getItem().getItem(), e.getItem().getCount(), Integer::sum);
+			e.discard();
+		}
+		return drops;
 	}
 
 	@GameTest(maxTicks = 80)

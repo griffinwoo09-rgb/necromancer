@@ -1,6 +1,11 @@
 package com.example.sorcerer.entity;
 
 import com.example.sorcerer.SorcererConfig;
+import com.example.sorcerer.SorcererMod;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -48,6 +53,11 @@ public enum SorcererVariant implements StringRepresentable {
 
 	public SoundEvent castSound() {
 		return castSound;
+	}
+
+	/** Extra drops for this variant, on top of the shared sorcerer table: data/sorcerer/loot_table/entities/sorcerer/<name>.json */
+	public ResourceKey<LootTable> lootTable() {
+		return ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath(SorcererMod.MOD_ID, "entities/sorcerer/" + name));
 	}
 
 	/** Case-insensitive lookup; null for an unknown name so callers can fall back instead of guessing. */

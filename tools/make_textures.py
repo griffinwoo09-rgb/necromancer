@@ -72,9 +72,10 @@ def skin(name, robe, shadow, glow):
                 c.px[fy + dy][fx + sx + dx] = c.col(SOCKET)
     c.lit(fx + 2, fy + 3, glow); c.lit(fx + 5, fy + 3, glow)
     c.px[fy + 5][fx + 3] = c.col(SOCKET); c.px[fy + 5][fx + 4] = c.col(SOCKET)
+    # jaw: symmetric upper teeth (row 6, dark gaps at 2 and 5) over a dark open mouth (row 7)
     for tx in range(1, 7):
-        c.px[fy + 6][fx + tx] = c.col(BONE_DARK if tx % 2 else BONE, 1.05)
-    c.px[fy + 7][fx + 2] = c.col(SOCKET); c.px[fy + 7][fx + 5] = c.col(SOCKET)
+        c.px[fy + 6][fx + tx] = c.col(SOCKET) if tx in (2, 5) else c.col(BONE, 0.92)
+        c.px[fy + 7][fx + tx] = c.col(SOCKET)
     # hood: robe shell, open face with a silver rim
     c.box(32, 0, 8, 8, 8, lambda f, x, y, w, h: (c.col(SILVER_DARK) if y < 1 or x in (0, w - 1) else CLEAR) if f == "front"
           else grad(shadow, y, h, 0.2))

@@ -43,6 +43,8 @@ public final class SorcererConfig {
 	public static final double SHIELD_RAISE_RANGE = 8.0;
 	public static final int SHIELD_UP_TICKS = 50;   // shield held up...
 	public static final int SHIELD_DOWN_TICKS = 20; // ...then lowered this long to attack
+	/** Summoned skeletons crumble this many seconds after their Sorcerer is gone (instantly if it dies nearby). */
+	public static final int ORPHAN_CRUMBLE_SECONDS = 5;
 
 	// Per-variant hit effects (fangs and aura pulses)
 	public static final double WIND_KNOCKBACK_HORIZONTAL = 1.2;
