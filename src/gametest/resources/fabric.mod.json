@@ -1,18 +1,18 @@
 {
 	"schemaVersion": 1,
-	"id": "sorcerer-test",
+	"id": "necromancer-test",
 	"version": "1.0.0",
-	"name": "Sorcerer game tests",
+	"name": "Necromancer game tests",
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"com.example.sorcerer.test.SorcererGameTests"
+			"com.example.necromancer.test.NecromancerGameTests"
 		],
 		"fabric-client-gametest": [
-			"com.example.sorcerer.test.SorcererClientGameTest"
+			"com.example.necromancer.test.NecromancerClientGameTest"
 		]
 	},
 	"depends": {
-		"sorcerer": "*"
+		"necromancer": "*"
 	}
 }

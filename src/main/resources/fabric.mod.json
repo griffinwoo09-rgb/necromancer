@@ -1,21 +1,21 @@
 {
 	"schemaVersion": 1,
-	"id": "sorcerer",
+	"id": "necromancer",
 	"version": "${version}",
-	"name": "Sorcerer",
-	"description": "Adds the desert Sorcerer, a fang-casting spellcaster with four elemental variants.",
+	"name": "Necromancer",
+	"description": "Adds the desert Necromancer, a fang-casting spellcaster with four elemental variants.",
 	"authors": [
 		"Me!"
 	],
 	"license": "CC0-1.0",
-	"icon": "assets/sorcerer/icon.png",
+	"icon": "assets/necromancer/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.sorcerer.SorcererMod"
+			"com.example.necromancer.NecromancerMod"
 		],
 		"client": [
-			"com.example.sorcerer.client.SorcererModClient"
+			"com.example.necromancer.client.NecromancerModClient"
 		]
 	},
 	"depends": {
@@ -25,6 +25,6 @@
 		"fabric-api": "*"
 	},
 	"mixins": [
-		"sorcerer.mixins.json"
+		"necromancer.mixins.json"
 	]
 }

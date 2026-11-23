@@ -14,7 +14,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"sorcerer" {
+		"necromancer" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
@@ -24,7 +24,7 @@ loom {
 fabricApi {
 	configureTests {
 		createSourceSet = true
-		modId = "sorcerer-test"
+		modId = "necromancer-test"
 		enableGameTests = true
 		enableClientGameTests = true
 		eula = false

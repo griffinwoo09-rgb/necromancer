@@ -1,8 +1,8 @@
-"""Draws the placeholder Sorcerer textures: 128x128 skin + emissive glow map per variant, and spawn eggs.
-UV offsets must match SorcererModel.createBodyLayer(). Run: python3 tools/make_textures.py"""
+"""Draws the placeholder Necromancer textures: 128x128 skin + emissive glow map per variant, and spawn eggs.
+UV offsets must match NecromancerModel.createBodyLayer(). Run: python3 tools/make_textures.py"""
 import os, random, struct, zlib
 
-ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources", "assets", "sorcerer", "textures")
+ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources", "assets", "necromancer", "textures")
 VARIANTS = {  # robe, robe shadow, glow
     "wind":   ((88, 104, 132), (58, 68, 90),  (150, 225, 255)),
     "fire":   ((158, 56, 24),  (104, 34, 14), (255, 160, 40)),
@@ -72,10 +72,10 @@ def skin(name, robe, shadow, glow):
                 c.px[fy + dy][fx + sx + dx] = c.col(SOCKET)
     c.lit(fx + 2, fy + 3, glow); c.lit(fx + 5, fy + 3, glow)
     c.px[fy + 5][fx + 3] = c.col(SOCKET); c.px[fy + 5][fx + 4] = c.col(SOCKET)
-    # jaw: symmetric upper teeth (row 6, dark gaps at 2 and 5) over a dark open mouth (row 7)
+    # jaw: the nose runs into a dark mouth slit (row 6); four square teeth on the chin (row 7), shaded corners
     for tx in range(1, 7):
-        c.px[fy + 6][fx + tx] = c.col(SOCKET) if tx in (2, 5) else c.col(BONE, 0.92)
-        c.px[fy + 7][fx + tx] = c.col(SOCKET)
+        c.px[fy + 6][fx + tx] = c.col(SOCKET)
+        c.px[fy + 7][fx + tx] = c.col(BONE_DARK) if tx in (1, 6) else c.col(BONE, 0.92 if tx % 2 else 1.0)
     # hood: robe shell, open face with a silver rim
     c.box(32, 0, 8, 8, 8, lambda f, x, y, w, h: (c.col(SILVER_DARK) if y < 1 or x in (0, w - 1) else CLEAR) if f == "front"
           else grad(shadow, y, h, 0.2))
@@ -162,7 +162,7 @@ def skin(name, robe, shadow, glow):
                 elif f not in ("front", "back"):
                     c.lit(x0 + x, y0 + y, tuple(int(v * 0.55) for v in glow))
 
-    base = os.path.join(ROOT, "entity", "sorcerer", name)
+    base = os.path.join(ROOT, "entity", "necromancer", name)
     write_png(base + ".png", 128, 128, c.px)
     write_png(base + "_glow.png", 128, 128, c.glow)
 
@@ -184,7 +184,7 @@ def egg(name, robe, shadow, glow):
     px[7][6] = px[7][9] = glow + (255,)
     for x, y in ((6, 11), (9, 12), (8, 13)):
         px[y][x] = glow + (255,)
-    write_png(os.path.join(ROOT, "item", name + "_sorcerer_spawn_egg.png"), 16, 16, px)
+    write_png(os.path.join(ROOT, "item", name + "_necromancer_spawn_egg.png"), 16, 16, px)
 
 
 for n, (r, s, g) in VARIANTS.items():

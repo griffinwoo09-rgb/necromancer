@@ -1,7 +1,0 @@
-{
-	"required": true,
-	"package": "com.example.sorcerer.mixin",
-	"compatibilityLevel": "JAVA_25",
-	"mixins": ["EvokerFangsAccessor"],
-	"injectors": { "defaultRequire": 1 }
-}
