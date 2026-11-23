@@ -1,6 +1,7 @@
 package com.example.necromancer.test;
 
 import com.example.necromancer.ModEntities;
+import com.example.necromancer.NecromancerConfig;
 import com.example.necromancer.entity.Necromancer;
 import com.example.necromancer.entity.NecromancerFangs;
 import com.example.necromancer.entity.NecromancerVariant;
@@ -66,6 +67,25 @@ public class NecromancerGameTests {
 	}
 
 	@GameTest(maxTicks = 60)
+	public void lightningFangsShockWithoutRealLightning(GameTestHelper helper) {
+		Pig pig = bite(helper, NecromancerVariant.LIGHTNING);
+		float startHealth = pig.getHealth();
+		helper.succeedWhen(() -> {
+			helper.assertTrue(pig.hasEffect(MobEffects.SLOWNESS), "pig was not stunned (no Slowness): alive=" + pig.isAlive() + " health=" + pig.getHealth() + " effects=" + pig.getActiveEffects() + " fire=" + pig.isOnFire());
+			helper.assertTrue(pig.getHealth() <= startHealth - 6.0F - NecromancerConfig.LIGHTNING_SHOCK_DAMAGE + 0.01F,
+					"shock damage missing: health " + pig.getHealth() + " of " + startHealth);
+			// the bolt is cosmetic: a real one would set the pig alight and turn it into a zombified piglin
+			helper.assertTrue(pig.isAlive() && !pig.isRemoved() && !pig.isOnFire(), "pig burned or converted by the bolt");
+			helper.assertTrue(helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+					new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(8.0), e -> e.getType() == EntityTypes.ZOMBIFIED_PIGLIN).isEmpty(),
+					"the bolt converted the pig");
+			for (BlockPos p : BlockPos.betweenClosed(helper.absolutePos(new BlockPos(0, 1, 0)), helper.absolutePos(new BlockPos(5, 2, 5)))) {
+				helper.assertTrue(!helper.getLevel().getBlockState(p).is(Blocks.FIRE), "the bolt lit a fire at " + p);
+			}
+		});
+	}
+
+	@GameTest(maxTicks = 60)
 	public void poisonFangsPoisonTarget(GameTestHelper helper) {
 		Pig pig = bite(helper, NecromancerVariant.POISON);
 		helper.succeedWhen(() -> helper.assertTrue(pig.hasEffect(MobEffects.POISON), "pig has no Poison"));
@@ -90,16 +110,18 @@ public class NecromancerGameTests {
 		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
 		java.util.Map<NecromancerVariant, Item> signature = java.util.Map.of(
 				NecromancerVariant.WIND, Items.WIND_CHARGE, NecromancerVariant.FIRE, Items.BLAZE_POWDER,
-				NecromancerVariant.WITHER, Items.BONE, NecromancerVariant.POISON, Items.SPIDER_EYE);
+				NecromancerVariant.WITHER, Items.BONE, NecromancerVariant.POISON, Items.SPIDER_EYE, NecromancerVariant.LIGHTNING, Items.GLOWSTONE_DUST);
 		java.util.Map<Item, Integer> total = new java.util.HashMap<>();
 		for (NecromancerVariant variant : NecromancerVariant.values()) {
 			java.util.Map<Item, Integer> drops = killAndCollect(helper, variant, helper.getLevel().damageSources().playerAttack(player), 100);
 			helper.assertTrue(drops.getOrDefault(signature.get(variant), 0) >= 100, variant + " did not drop its " + signature.get(variant) + ": " + drops);
+			// glowstone is the lightning drop now; it must not leak from any other variant (or the shared table)
+			helper.assertTrue(variant == NecromancerVariant.LIGHTNING || !drops.containsKey(Items.GLOWSTONE_DUST), variant + " dropped glowstone: " + drops);
 			drops.forEach((item, n) -> total.merge(item, n, Integer::sum));
 		}
-		helper.assertTrue(total.getOrDefault(Items.RAW_GOLD, 0) > 0, "400 player kills dropped no raw gold: " + total);
-		helper.assertTrue(total.getOrDefault(Items.NETHERITE_SCRAP, 0) > 0, "400 player kills dropped no netherite scrap: " + total);
-		for (Item witch : List.of(Items.GLOWSTONE_DUST, Items.SUGAR, Items.GLASS_BOTTLE, Items.GUNPOWDER, Items.STICK, Items.REDSTONE)) {
+		helper.assertTrue(total.getOrDefault(Items.RAW_GOLD, 0) > 0, "player kills dropped no raw gold: " + total);
+		helper.assertTrue(total.getOrDefault(Items.NETHERITE_SCRAP, 0) > 0, "player kills dropped no netherite scrap: " + total);
+		for (Item witch : List.of(Items.SUGAR, Items.GLASS_BOTTLE, Items.GUNPOWDER, Items.STICK, Items.REDSTONE)) {
 			helper.assertTrue(!total.containsKey(witch), "witch drop " + witch + " still drops: " + total);
 		}
 		helper.succeed();

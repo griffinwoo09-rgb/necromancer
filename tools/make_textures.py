@@ -8,10 +8,12 @@ VARIANTS = {  # robe, robe shadow, glow
     "fire":   ((158, 56, 24),  (104, 34, 14), (255, 160, 40)),
     "wither": ((40, 32, 52),   (24, 19, 32),  (190, 160, 255)),
     "poison": ((44, 92, 40),   (28, 58, 26),  (110, 255, 60)),
+    "lightning": ((176, 138, 32), (112, 86, 18), (255, 248, 140)),
 }
 SILVER, SILVER_DARK = (198, 202, 208), (130, 134, 142)
 BONE, BONE_DARK = (156, 156, 150), (96, 96, 92)
-SOCKET, STAFF = (22, 20, 26), (34, 30, 40)
+SOCKET, STAFF, STAFF_GRAIN = (22, 20, 26), (34, 30, 40), (58, 50, 62)
+LEATHER = (92, 62, 40)
 CLEAR = (0, 0, 0, 0)
 
 
@@ -146,20 +148,34 @@ def skin(name, robe, shadow, glow):
     # bone legs
     c.box(56, 50, 2, 12, 2, lambda f, x, y, w, h: c.col(BONE_DARK if y in (5, 6) else BONE, 1.0 - 0.02 * y))
 
-    # staff: dark shaft with silver bands, glowing orb and halo
-    c.box(0, 64, 1, 32, 1, lambda f, x, y, w, h: c.col(SILVER) if y in (2, 3, 24) else c.col(STAFF))
+    # staff shaft (2x32x2, grip 24 px down): ebony with a pale grain line, silver collar at the top,
+    # leather-wrapped grip around the hand, silver ferrule at the foot
+    def shaft(f, x, y, w, h):
+        if f in ("top", "bottom"):
+            return c.col(SILVER_DARK)
+        if y <= 1 or y >= h - 2:
+            return c.col(SILVER, 1.0 if y in (0, h - 1) else 0.8)
+        if 20 <= y <= 27:
+            return c.col(LEATHER, 1.0 if (y + x) % 2 else 0.75)
+        return c.col(STAFF_GRAIN if x == (y // 5) % 2 else STAFF, 1.0 - 0.15 * (y % 5 == 0))
+    c.box(0, 64, 2, 32, 2, shaft)
+    # silver collar where the orb sits on the shaft
+    c.box(48, 64, 3, 1, 3, lambda f, x, y, w, h: c.col(SILVER, 1.05 if f == "top" else 0.9))
     for f, (x0, y0, w, h) in faces(8, 64, 5, 5, 2).items():
         for y in range(h):
             for x in range(w):
                 ring = x in (0, w - 1) or y in (0, h - 1)
                 c.lit(x0 + x, y0 + y, glow if ring else (255, 255, 255) if f in ("front", "back") and 1 <= x <= w - 2 and 1 <= y <= h - 2 and (x, y) != (w // 2, h // 2) else glow)
+    # halo: a hollow glowing ring around the orb (clipped corners read as round), see-through in the middle
     for f, (x0, y0, w, h) in faces(24, 64, 7, 7, 1).items():
         for y in range(h):
             for x in range(w):
-                corner = (x in (0, w - 1)) and (y in (0, h - 1))  # clipped corners read as a hexagon
-                if f in ("front", "back") and not corner:
-                    c.lit(x0 + x, y0 + y, tuple(int(v * 0.55) for v in glow))
-                elif f not in ("front", "back"):
+                if f in ("front", "back"):
+                    corner = (x in (0, w - 1)) and (y in (0, h - 1))
+                    rim = x in (0, w - 1) or y in (0, h - 1)
+                    if rim and not corner:
+                        c.lit(x0 + x, y0 + y, tuple(int(v * 0.7) for v in glow))
+                else:
                     c.lit(x0 + x, y0 + y, tuple(int(v * 0.55) for v in glow))
 
     base = os.path.join(ROOT, "entity", "necromancer", name)

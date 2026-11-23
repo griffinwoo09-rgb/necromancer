@@ -33,13 +33,17 @@ public class NecromancerRenderer extends MobRenderer<Necromancer, NecromancerRen
 		super.extractRenderState(entity, state, partialTick);
 		state.variant = entity.getVariant();
 		state.casting = entity.isCastingSpell();
+		state.castBlend = entity.castBlend(partialTick);
+		state.castPose = entity.castPose();
+		state.castTime = entity.castTicks() + partialTick;
+		state.phase = (entity.getId() * 37) % 100 * 0.0628F;
 		state.flourish = flourishProgress(entity, state);
 	}
 
 	/** Client-only flourish: roughly every 30 s while standing idle, offset per entity so a group doesn't sync up. */
 	private static float flourishProgress(Necromancer entity, NecromancerRenderState state) {
 		final int period = 600, length = 40;
-		if (state.casting || state.walkAnimationSpeed > 0.05F || entity.isAggressive()) return 0.0F;
+		if (state.casting || state.castBlend > 0.0F || state.walkAnimationSpeed > 0.05F || entity.isAggressive()) return 0.0F;
 		float t = (state.ageInTicks + entity.getId() * 97) % period;
 		return t < length ? t / length : 0.0F;
 	}

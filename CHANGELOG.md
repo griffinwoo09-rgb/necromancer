@@ -4,6 +4,51 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.2.0] - 2026-11-22 — The Storm update
+
+A fifth Necromancer arrives, every pose got reworked, and the staff no longer cuts through the body.
+
+### ⚠️ Upgrade notes
+- No breaking changes. Existing Necromancers keep their variant, and the Lightning Necromancer joins the random desert spawns (each variant is now 1 in 5).
+- Replace `necromancer-1.1.0-fabric-0.19.5.jar` with `necromancer-1.2.0-fabric-0.19.5.jar`.
+
+### Added
+- **Lightning Necromancer** (gold robe, electric-yellow glow, spark particles, trident-thunder cast sound). Its fangs and aura:
+  - call down a **cosmetic** lightning bolt on the target: thunder and flash only, no fire, and no creeper, pig or villager conversions. At most one bolt per target every half second.
+  - **shock** for 3 extra damage.
+  - **stun** with Slowness III for 1.5 seconds.
+- **Lightning drops:**
+  - Every kill: 1–3 glowstone dust (+Looting).
+  - Player kills: 2% trident (2.5% +0.5% per Looting level).
+- **Lightning extras:** a Lightning Necromancer Spawn Egg, and a banner shield for its skeletons (yellow bolt slashing across black, in a yellow frame).
+- **A distinct pose for each spell:**
+  - Fangs: draws the staff back, then thrusts it at the target with the orb tipped forward.
+  - Summon: both arms flung overhead with the staff held high, skull thrown back.
+  - Aura: plants the staff in the ground in front, bows its head, spreads its free hand.
+- **Idle life:**
+  - Slow breathing and skull sway.
+  - Cape and robe ripple out of step across a group.
+  - Legs dangle while hovering.
+  - A flinch when hit.
+- New automated test for the lightning shock: damage and Slowness land, and the pig isn't set on fire, converted, or near any fire (22 tests total). The screenshot test now covers all 5 variants, every banner shield, each cast pose from both sides, and a lightning strike.
+
+### Changed
+- **Smooth animation blending.** Casting poses ease in and out over about a quarter second instead of snapping.
+- **New staff:**
+  - Thicker 2×2 ebony shaft with grain, a leather-wrapped grip and silver ferrule.
+  - Silver collar under the orb.
+  - The glowing halo is now a hollow ring.
+  - The grip sits lower on the shaft, so less of it hangs below the hand.
+- **Staff toss idle:** the staff is thrown above the head and spins about its middle before being caught.
+- Docs screenshots retaken.
+
+### Fixed
+- **Staff clipping through the body.** Four causes:
+  - It was held right against the robe and swung with the arm, so its foot cut into the robe and legs while walking. It's now held further out, tilted slightly away, and kept upright as the arm swings, like a walking stick.
+  - The cast pose could push the orb into the hood.
+  - The idle toss spun the staff around the hand, which swept it through the skull and crown.
+  - The idle toss also lowered the staff when it was meant to lift it.
+
 ## [1.1.0] - 2026-11-22 — The Necromancer update
 
 The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight under their master's colours.
@@ -69,6 +114,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.2.0]: ../../releases/tag/v1.2.0
 [1.1.0]: ../../releases/tag/v1.1.0
 [1.0.1]: ../../releases/tag/v1.0.1
 [1.0.0-fabric-0.19.5]: ../../releases/tag/v1.0.0-fabric-0.19.5

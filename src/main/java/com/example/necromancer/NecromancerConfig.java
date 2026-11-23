@@ -54,6 +54,11 @@ public final class NecromancerConfig {
 	public static final int WITHER_AMPLIFIER = 0;
 	public static final int POISON_TICKS = 100;
 	public static final int POISON_AMPLIFIER = 0;
+	/** Lightning: extra damage on top of the fang bite or aura pulse, then a short Slowness "stun". No real bolt: no fire or mob conversions. */
+	public static final float LIGHTNING_SHOCK_DAMAGE = 3.0F;
+	public static final int LIGHTNING_STUN_TICKS = 30;
+	public static final int LIGHTNING_STUN_AMPLIFIER = 2;        // Slowness III
+	public static final int LIGHTNING_BOLT_COOLDOWN_TICKS = 10;  // at most one cosmetic bolt per target this often
 
 	// Spawning (desert biomes, monster category)
 	public static final int SPAWN_WEIGHT = 20;

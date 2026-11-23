@@ -136,6 +136,7 @@ public class Necromancer extends SpellcasterIllager {
 			updateHover();
 			if (auraTicks > 0) tickAura(server);
 		}
+		if (level().isClientSide()) tickCastAnimation();
 		if (level().isClientSide() && isCastingSpell()) {
 			// variant-coloured sparks swirling around the staff orb held up in front (see NecromancerModel cast pose)
 			float angle = this.tickCount * 0.5F;
@@ -151,6 +152,61 @@ public class Necromancer extends SpellcasterIllager {
 				level().addParticle(getVariant().particle(), getRandomX(0.4), getY() - 0.1, getRandomZ(0.4), 0.0, -0.03, 0.0);
 			}
 		}
+	}
+
+	/** Which body pose a spell uses; NONE when not casting. Client animation only. */
+	public enum CastPose { NONE, FANGS, SUMMON, AURA }
+
+	// client-only animation state: eased in/out so poses blend instead of snapping
+	private float castAnim, prevCastAnim;
+	private int castTicks;
+	private CastPose lastCastPose = CastPose.NONE;
+
+	private void tickCastAnimation() {
+		prevCastAnim = castAnim;
+		CastPose pose = currentCastPose();
+		if (pose != CastPose.NONE) {
+			if (pose != lastCastPose) castTicks = 0;
+			lastCastPose = pose; // kept while blending out, so the arms ease down from the right pose
+			castTicks++;
+		}
+		castAnim = Mth.approach(castAnim, pose != CastPose.NONE ? 1.0F : 0.0F, 0.2F);
+	}
+
+	/** 0 = normal pose, 1 = fully in the cast pose; eased over ~5 ticks each way. */
+	public float castBlend(float partialTick) {
+		float t = Mth.lerp(partialTick, prevCastAnim, castAnim);
+		return t * t * (3.0F - 2.0F * t);
+	}
+
+	/** The pose to show: the live spell while casting, the last one while blending out. */
+	public CastPose castPose() {
+		return lastCastPose;
+	}
+
+	/** Ticks since the current cast pose began (client side), for wind-ups. */
+	public int castTicks() {
+		return castTicks;
+	}
+
+	/** Server side: holds a cast pose without casting anything (used by the screenshot test on a NoAI Necromancer). */
+	public void holdCastPose(CastPose pose) {
+		setIsCastingSpell(switch (pose) {
+			case NONE -> IllagerSpell.NONE;
+			case FANGS -> IllagerSpell.FANGS;
+			case SUMMON -> IllagerSpell.SUMMON_VEX;
+			case AURA -> IllagerSpell.DISAPPEAR;
+		});
+	}
+
+	private CastPose currentCastPose() {
+		if (!isCastingSpell()) return CastPose.NONE;
+		return switch (getCurrentSpell()) {
+			case FANGS -> CastPose.FANGS;
+			case SUMMON_VEX -> CastPose.SUMMON;
+			case DISAPPEAR -> CastPose.AURA;
+			default -> CastPose.FANGS;
+		};
 	}
 
 	/** Ring of the variant's effect around itself when a target comes close. */
