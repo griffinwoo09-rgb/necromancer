@@ -131,20 +131,6 @@ public class NecromancerGameTests {
 		helper.succeed();
 	}
 
-	/** The staff is rare (1.5% of player kills) but real: 2,000 fire kills expect ~30, and never another variant's staff. */
-	@GameTest(maxTicks = 40)
-	public void staffsDropRarelyFromTheirOwnVariant(GameTestHelper helper) {
-		floor(helper);
-		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-		java.util.Map<Item, Integer> drops = killAndCollect(helper, NecromancerVariant.FIRE, helper.getLevel().damageSources().playerAttack(player), 2000);
-		int fire = drops.getOrDefault(ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()), 0);
-		helper.assertTrue(fire > 0 && fire < 100, "fire staff drops out of range (expected ~30 in 2000): " + fire);
-		for (Item staff : ModItems.STAFFS) {
-			helper.assertTrue(staff == ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()) || !drops.containsKey(staff), "fire dropped " + staff);
-		}
-		helper.succeed();
-	}
-
 	@GameTest
 	public void necromancerIsAMiniBoss(GameTestHelper helper) {
 		floor(helper);
@@ -216,36 +202,6 @@ public class NecromancerGameTests {
 		helper.succeed();
 	}
 
-	/** A player's staff: spikes owned by the player, cooldown, 1 durability, and they spare the player's own wolf. */
-	@GameTest(maxTicks = 80)
-	public void staffRaisesSpikesThatSparePets(GameTestHelper helper) {
-		for (int x = 0; x < 5; x++) for (int z = 0; z < 9; z++) helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
-		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
-		Vec3 at = helper.absoluteVec(new Vec3(2.5, 1, 0.5));
-		player.snapTo(at.x, at.y, at.z, 0.0F, 0.0F); // facing +z, down the floor
-		helper.getLevel().addFreshEntity(player);
-		net.minecraft.world.entity.animal.wolf.Wolf wolf = helper.spawn(EntityTypes.WOLF, new BlockPos(2, 1, 3));
-		wolf.tame(player);
-		wolf.setNoAi(true);
-		Pig pig = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 6));
-		pig.setNoAi(true);
-		float wolfHp = wolf.getHealth(), pigHp = pig.getHealth();
-		ItemStack staff = new ItemStack(ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()));
-		player.setItemInHand(InteractionHand.MAIN_HAND, staff);
-		staff.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
-		// tests run side by side: count only spikes this test's player raised, not a neighbour's
-		List<NecromancerFangs> spikes = helper.getLevel().getEntitiesOfClass(NecromancerFangs.class,
-				new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(12.0), s -> s.getOwner() == player);
-		helper.assertTrue(spikes.size() >= 5, "staff raised only " + spikes.size() + " spikes");
-		helper.assertTrue(spikes.stream().allMatch(s -> s.getVariant() == NecromancerVariant.FIRE), "player's spikes have the wrong variant");
-		helper.assertTrue(player.getCooldowns().isOnCooldown(staff), "staff has no cooldown");
-		helper.assertValueEqual(staff.getDamageValue(), 1, "staff damage after one cast");
-		helper.succeedWhen(() -> {
-			helper.assertTrue(pig.getHealth() < pigHp && pig.isOnFire(), "pig in the line was not hit by fire spikes");
-			helper.assertValueEqual(wolf.getHealth(), wolfHp, "tamed wolf health");
-			helper.assertTrue(!wolf.isOnFire(), "tamed wolf was set on fire");
-		});
-	}
 
 	@GameTest(maxTicks = 40)
 	public void nonPlayerKillsDropNoGoldOrScrap(GameTestHelper helper) {

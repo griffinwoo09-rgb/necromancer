@@ -4,6 +4,22 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.3.2] - 2026-11-22 — Staff removed
+
+### ⚠️ Upgrade notes
+- Replace `necromancer-1.3.1-fabric-0.19.5.jar` with `necromancer-1.3.2-fabric-0.19.5.jar`.
+- **Any Necromancer's Staff already in a world disappears** on update (from inventories, chests and item frames), because the item no longer exists.
+
+### Removed
+- **The Necromancer's Staff item** (all five variants), added in 1.3.0. That includes:
+  - its drop from Necromancers;
+  - its Combat creative-tab entry, textures, models and names;
+  - its enchanting tags and config values.
+- The pet-protection damage hook that only existed for staff-cast spikes.
+- The staff tests and the staff screenshots (28 tests total).
+
+The Necromancer itself is unchanged: it still has its staff in hand, with the sweep, soul skulls and bone spikes.
+
 ## [1.3.1] - 2026-11-22 — Pacing and a ragtag army
 
 The Necromancer no longer summons an army and then keeps casting non-stop, and its skeletons look like a mixed rabble instead of a uniformed squad.
@@ -216,6 +232,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.3.2]: ../../releases/tag/v1.3.2
 [1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0
 [1.2.1]: ../../releases/tag/v1.2.1

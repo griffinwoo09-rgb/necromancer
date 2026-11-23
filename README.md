@@ -7,7 +7,7 @@ Versions: Minecraft 26.3 · Fabric Loader 0.19.5 or newer · Fabric API 0.166.2+
 ## Where to tweak things
 | What | Where |
 |---|---|
-| Health, armor, speed, cast timing, spike pattern, soul-skull and sweep numbers, staff cooldown/durability, aura size/duration, skeleton army chance/size, hover, effect durations, knockback, spawn weight and group size | `src/main/java/com/example/necromancer/NecromancerConfig.java` |
+| Health, armor, speed, cast timing, spike pattern, soul-skull and sweep numbers, aura size/duration, skeleton army chance/size, hover, effect durations, knockback, spawn weight and group size | `src/main/java/com/example/necromancer/NecromancerConfig.java` |
 | Shared drops (totem, raw gold, netherite scrap; player kills only) | `src/main/resources/data/necromancer/loot_table/entities/necromancer.json` |
 | Per-variant drops | `src/main/resources/data/necromancer/loot_table/entities/necromancer/<variant>.json` |
 | Which biomes it spawns in (default `#c:is_desert`) | `src/main/resources/data/necromancer/tags/worldgen/biome/spawns_necromancer.json` |
@@ -25,7 +25,7 @@ macOS / Linux:
 export JAVA_HOME=/opt/homebrew/opt/openjdk@25   # wherever your JDK 25 is
 ./gradlew build            # compile + jar in build/libs
 ./gradlew runClient        # play
-./gradlew runGameTest      # 30 headless tests: mixed army gear, staff casts (and spares your pets), staff drop rarity, armies never infight, mini-boss stats, homing soul skull, sweep arc, lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer (on death and when it disappears), fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
+./gradlew runGameTest      # 28 headless tests: mixed army gear, armies never infight, mini-boss stats, homing soul skull, sweep arc, lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer (on death and when it disappears), fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
 ./gradlew runClientGameTest  # opens the game, screenshots to build/run/clientGameTest/screenshots
 ```
 
@@ -45,10 +45,9 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@25   # wherever your JDK 25 is
 2. Stand about 8 blocks away. The Necromancer stops, rises about 1 block into the air, raises its glowing staff with coloured sparks, and plays its own cast sound. It drops back down when the spell ends. A line of tinted fangs then runs toward you.
 3. Walk up close. You get the two-ring pattern instead.
 4. Get bitten by each variant. Wind launches you back and up, fire sets you on fire, wither gives Wither, poison gives Poison, lightning strikes a bolt (no fire), deals extra damage and slows you right down.
-5. Kill some with and without a Looting sword. Every kill drops 1-3 emeralds and the variant item: wind 1-3 wind charges, fire 1-2 blaze powder, wither 1-3 bones, poison 1-2 spider eyes, lightning 1-3 glowstone dust (Looting adds up to 1 per level). Player kills can also drop: 1-3 bottles o' enchanting (30%), 1-3 raw gold (25%), a totem (12%), 1-2 netherite scrap (8%), an enchanted book (6%), a golden apple (4%), a diamond (3%), the variant rare (breeze rod, blaze rod, wither rose or fermented spider eye 10%, trident 2% from lightning), and rarely (1.5%) that variant's Necromancer's Staff. No witch drops, never an ominous banner.
+5. Kill some with and without a Looting sword. Every kill drops 1-3 emeralds and the variant item: wind 1-3 wind charges, fire 1-2 blaze powder, wither 1-3 bones, poison 1-2 spider eyes, lightning 1-3 glowstone dust (Looting adds up to 1 per level). Player kills can also drop: 1-3 bottles o' enchanting (30%), 1-3 raw gold (25%), a totem (12%), 1-2 netherite scrap (8%), an enchanted book (6%), a golden apple (4%), a diamond (3%), the variant rare (breeze rod, blaze rod, wither rose or fermented spider eye 10%, trident 2% from lightning). No witch drops, never an ominous banner.
 5b. Walk within 5 blocks of one. It casts a ring of its element (radius 4) that pulses every second for 5 seconds.
 5c. Keep fighting it. About 30% of its summon windows (every 15 s) raise 3 sword/spear skeletons, up to 6 nearby. Kill the Necromancer and its skeletons crumble to soul smoke.
-5d. Get the staff (`/give @s necromancer:fire_necromancer_staff`). Right-click raises a line of 8 bone spikes where you look; sneak + right-click raises a ring of 6 around you. Spikes carry the variant's effect and never hurt your own tamed pets. 2-second cooldown, 250 durability (1 per cast), takes Unbreaking, Mending and Vanishing; weak in melee.
 6. Spawn eggs are in the Spawn Eggs creative tab, after the Evoker egg. Each egg spawns its own variant.
 7. Desert spawning: `/locate biome minecraft:desert`, go there at night, and give it a few minutes. Plains should never get one.
 8. Stand in daylight next to one. It doesn't burn.

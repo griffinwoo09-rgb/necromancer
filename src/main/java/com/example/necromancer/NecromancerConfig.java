@@ -34,11 +34,6 @@ public final class NecromancerConfig {
 	public static final float SWEEP_DAMAGE = 6.0F;
 	public static final double SWEEP_KNOCKBACK = 1.2;
 
-	// Necromancer's Staff (player item)
-	public static final int STAFF_DURABILITY = 250;
-	public static final int STAFF_COOLDOWN = 40;
-	public static final int STAFF_LINE_SPIKES = 8;
-	public static final int STAFF_RING_SPIKES = 6;
 
 	// Fang spell timing (ticks)
 	public static final int CAST_WARMUP = 20;

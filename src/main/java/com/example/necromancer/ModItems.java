@@ -1,15 +1,6 @@
 package com.example.necromancer;
 
 import com.example.necromancer.entity.NecromancerVariant;
-import com.example.necromancer.item.NecromancerStaffItem;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.ItemLore;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -31,8 +22,6 @@ public final class ModItems {
 	private ModItems() {}
 
 	public static final List<Item> SPAWN_EGGS = new ArrayList<>();
-	/** One Necromancer's Staff per variant, in NecromancerVariant order. */
-	public static final List<Item> STAFFS = new ArrayList<>();
 
 	public static void init() {
 		for (NecromancerVariant variant : NecromancerVariant.values()) {
@@ -47,27 +36,5 @@ public final class ModItems {
 		}
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS)
 				.register(output -> output.insertAfter(Items.EVOKER_SPAWN_EGG, SPAWN_EGGS.toArray(ItemLike[]::new)));
-
-		// staffs: rare drops, durable like a trident, weak in melee (3 damage, slow), enchantable for Unbreaking/Mending
-		ItemAttributeModifiers melee = ItemAttributeModifiers.builder()
-				.add(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, 2.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-				.add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-				.build();
-		ItemLore lore = new ItemLore(List.of(
-				Component.translatable("item.necromancer.necromancer_staff.use").withStyle(ChatFormatting.GRAY),
-				Component.translatable("item.necromancer.necromancer_staff.sneak_use").withStyle(ChatFormatting.GRAY)));
-		for (NecromancerVariant variant : NecromancerVariant.values()) {
-			ResourceKey<Item> key = ResourceKey.create(Registries.ITEM,
-					Identifier.fromNamespaceAndPath(NecromancerMod.MOD_ID, variant.getSerializedName() + "_necromancer_staff"));
-			Item staff = new NecromancerStaffItem(variant, new Item.Properties().setId(key)
-					.durability(NecromancerConfig.STAFF_DURABILITY)
-					.rarity(Rarity.RARE)
-					.enchantable(15)
-					.attributes(melee)
-					.component(DataComponents.LORE, lore));
-			STAFFS.add(Registry.register(BuiltInRegistries.ITEM, key, staff));
-		}
-		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT)
-				.register(output -> output.insertAfter(Items.TRIDENT, STAFFS.toArray(ItemLike[]::new)));
 	}
 }

@@ -7,12 +7,5 @@
 	"item.necromancer.poison_necromancer_spawn_egg": "Poison Necromancer Spawn Egg",
 	"item.necromancer.lightning_necromancer_spawn_egg": "Lightning Necromancer Spawn Egg",
 	"entity.necromancer.necromancer_skeleton": "Necromancer Skeleton",
-	"entity.necromancer.soul_skull": "Soul Skull",
-	"item.necromancer.wind_necromancer_staff": "Wind Necromancer's Staff",
-	"item.necromancer.fire_necromancer_staff": "Fire Necromancer's Staff",
-	"item.necromancer.wither_necromancer_staff": "Wither Necromancer's Staff",
-	"item.necromancer.poison_necromancer_staff": "Poison Necromancer's Staff",
-	"item.necromancer.lightning_necromancer_staff": "Lightning Necromancer's Staff",
-	"item.necromancer.necromancer_staff.use": "Use: raise a line of bone spikes",
-	"item.necromancer.necromancer_staff.sneak_use": "Sneak + Use: raise a ring of bone spikes around you"
+	"entity.necromancer.soul_skull": "Soul Skull"
 }

@@ -111,14 +111,10 @@ public class NecromancerClientGameTest implements FabricClientGameTest {
 							new net.minecraft.core.BlockPos(56 + i * 2, -59, 65), net.minecraft.core.Direction.NORTH);
 					frame.setItem(all[i].makeShield(level.registryAccess()));
 					level.addFreshEntity(frame);
-					var staffFrame = new net.minecraft.world.entity.decoration.ItemFrame(level,
-							new net.minecraft.core.BlockPos(56 + i * 2, -58, 65), net.minecraft.core.Direction.NORTH);
-					staffFrame.setItem(new net.minecraft.world.item.ItemStack(com.example.necromancer.ModItems.STAFFS.get(i)));
-					level.addFreshEntity(staffFrame);
 				}
 			});
 			context.waitTicks(20);
-			context.takeScreenshot("variant_banner_shields_and_staffs");
+			context.takeScreenshot("variant_banner_shields");
 
 			// staff clearance: one frozen Necromancer per pose, seen side-on from its staff hand, then from the other side
 			server.runCommand("kill @e[type=!player]");
@@ -186,11 +182,6 @@ public class NecromancerClientGameTest implements FabricClientGameTest {
 			context.waitTicks(6);
 			context.takeScreenshot("soul_skull_in_flight");
 
-			// a staff in hand
-			server.runCommand("kill @e[type=!player]");
-			server.runCommand("item replace entity @a weapon.mainhand with necromancer:lightning_necromancer_staff");
-			context.waitTicks(10);
-			context.takeScreenshot("staff_in_hand");
 		}
 	}
 }

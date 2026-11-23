@@ -47,7 +47,7 @@ public class NecromancerFangs extends EvokerFangs {
 
 	/**
 	 * Places one spike at (x, z) on the first sturdy floor found walking down from maxY to minY; none if there is no
-	 * floor in that span (same rule as vanilla Evoker fangs). Used by both the Necromancer and the staff.
+	 * floor in that span (same rule as vanilla Evoker fangs).
 	 */
 	public static void place(Level level, double x, double z, double minY, double maxY, float yRot, int warmup, LivingEntity owner, NecromancerVariant variant) {
 		BlockPos pos = BlockPos.containing(x, maxY, z);
