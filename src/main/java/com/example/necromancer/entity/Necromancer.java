@@ -311,8 +311,37 @@ public class Necromancer extends SpellcasterIllager {
 		return hit;
 	}
 
+	/** Game tick before which no spell may start: set after every cast, longer after raising an army. */
+	private int spellRestUntil;
+
+	/** True while resting between spells. */
+	public boolean isRestingBetweenSpells() {
+		return this.tickCount < spellRestUntil;
+	}
+
+	/**
+	 * Spell goal that leaves a breather after it, so attacks come in waves instead of a constant stream:
+	 * no other spell starts for {@link #restTicks()} after this one ends.
+	 */
+	abstract class PacedSpellGoal extends SpellcasterUseSpellGoal {
+		@Override
+		public boolean canUse() {
+			return !isRestingBetweenSpells() && super.canUse();
+		}
+
+		@Override
+		public void stop() {
+			super.stop();
+			spellRestUntil = Math.max(spellRestUntil, tickCount + restTicks());
+		}
+
+		protected int restTicks() {
+			return NecromancerConfig.SPELL_GAP;
+		}
+	}
+
 	/** At range: lobs homing soul skulls (two on Hard) from the staff orb. */
-	class SoulBoltGoal extends SpellcasterUseSpellGoal {
+	class SoulBoltGoal extends PacedSpellGoal {
 		@Override
 		public boolean canUse() {
 			LivingEntity target = getTarget();
@@ -362,7 +391,7 @@ public class Necromancer extends SpellcasterIllager {
 	}
 
 	/** Ring of the variant's effect around itself when a target comes close. */
-	class AuraSpellGoal extends SpellcasterUseSpellGoal {
+	class AuraSpellGoal extends PacedSpellGoal {
 		@Override
 		public boolean canUse() {
 			LivingEntity target = getTarget();
@@ -397,7 +426,7 @@ public class Necromancer extends SpellcasterIllager {
 	}
 
 	/** Sometimes raises a skeleton army instead of attacking (no Vexes). */
-	class SummonSkeletonsGoal extends SpellcasterUseSpellGoal {
+	class SummonSkeletonsGoal extends PacedSpellGoal {
 		@Override
 		public boolean canUse() {
 			if (!super.canUse()) return false;
@@ -424,6 +453,12 @@ public class Necromancer extends SpellcasterIllager {
 			return NecromancerConfig.SKELETON_SUMMON_COOLDOWN;
 		}
 
+		/** The army does the fighting for a while before the Necromancer casts again. */
+		@Override
+		protected int restTicks() {
+			return NecromancerConfig.SUMMON_RECOVERY;
+		}
+
 		@Override
 		protected SoundEvent getSpellPrepareSound() {
 			return SoundEvents.EVOKER_PREPARE_SUMMON;
@@ -436,7 +471,7 @@ public class Necromancer extends SpellcasterIllager {
 	}
 
 	/** Evoker-style fang attack: a line toward distant targets, two rings around close ones. No vexes. */
-	class FangSpellGoal extends SpellcasterUseSpellGoal {
+	class FangSpellGoal extends PacedSpellGoal {
 		@Override
 		protected int getCastingTime() {
 			return NecromancerConfig.CAST_DURATION;

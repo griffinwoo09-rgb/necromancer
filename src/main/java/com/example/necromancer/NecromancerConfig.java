@@ -18,7 +18,7 @@ public final class NecromancerConfig {
 	public static final double SOUL_BOLT_MIN_RANGE = 7.0;
 	public static final double SOUL_BOLT_MAX_RANGE = 16.0;
 	public static final int SOUL_BOLT_CAST_TIME = 25;
-	public static final int SOUL_BOLT_COOLDOWN = 80;
+	public static final int SOUL_BOLT_COOLDOWN = 120;
 	public static final double SOUL_SKULL_SPEED = 0.6;          // blocks per tick
 	public static final double SOUL_SKULL_TURN_DEGREES = 6.0;   // max homing turn per tick
 	public static final int SOUL_SKULL_LIFETIME = 100;
@@ -30,7 +30,7 @@ public final class NecromancerConfig {
 	public static final double SWEEP_ARC_DEGREES = 100.0;
 	public static final int SWEEP_WINDUP = 10;
 	public static final int SWEEP_LENGTH = 16;
-	public static final int SWEEP_COOLDOWN = 60;
+	public static final int SWEEP_COOLDOWN = 80;
 	public static final float SWEEP_DAMAGE = 6.0F;
 	public static final double SWEEP_KNOCKBACK = 1.2;
 
@@ -43,7 +43,7 @@ public final class NecromancerConfig {
 	// Fang spell timing (ticks)
 	public static final int CAST_WARMUP = 20;
 	public static final int CAST_DURATION = 40;
-	public static final int CAST_COOLDOWN = 100;
+	public static final int CAST_COOLDOWN = 140;
 
 	/** Blocks the Necromancer rises off the ground while casting, and how fast it gets there (0-1). */
 	public static final double HOVER_HEIGHT = 1.0;
@@ -59,15 +59,24 @@ public final class NecromancerConfig {
 	public static final double AURA_RADIUS = 4.0;
 	public static final int AURA_DURATION = 100;        // ticks the ring stays up
 	public static final int AURA_PULSE_INTERVAL = 20;   // ticks between effect pulses inside the ring
-	public static final int AURA_COOLDOWN = 240;
+	public static final int AURA_COOLDOWN = 320;
 
 	// Skeleton army summon
+	/** After any spell, no other spell starts for this long (ticks), so attacks come in waves rather than a stream. */
+	public static final int SPELL_GAP = 30;
+	/** After raising an army it rests this long before casting again: the skeletons do the fighting for a while. */
+	public static final int SUMMON_RECOVERY = 100;
 	public static final float SKELETON_SUMMON_CHANCE = 0.3F; // rolled once per cooldown window
 	public static final int SKELETON_SUMMON_COOLDOWN = 300;
 	public static final int SKELETON_ARMY_SIZE = 3;
 	public static final int MAX_SKELETONS_NEARBY = 6;         // counted within 16 blocks
 	/** Chance each summon includes one spear + shield skeleton; the rest get a sword or a spear. */
 	public static final float SHIELD_BEARER_CHANCE = 0.35F;
+	/** Each army skeleton: spear instead of a sword this often (the rest get swords). */
+	public static final float SPEAR_CHANCE = 0.25F;
+	/** Each army skeleton: chainmail helmet, else iron helmet, else bare-headed (and burns in daylight). */
+	public static final float CHAINMAIL_HELMET_CHANCE = 0.5F;
+	public static final float IRON_HELMET_CHANCE = 0.15F;
 	public static final double SHIELD_RAISE_RANGE = 8.0;
 	public static final int SHIELD_UP_TICKS = 50;   // shield held up...
 	public static final int SHIELD_DOWN_TICKS = 20; // ...then lowered this long to attack

@@ -4,6 +4,36 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.3.1] - 2026-11-22 — Pacing and a ragtag army
+
+The Necromancer no longer summons an army and then keeps casting non-stop, and its skeletons look like a mixed rabble instead of a uniformed squad.
+
+### ⚠️ Upgrade notes
+- No breaking changes. Replace `necromancer-1.3.0-fabric-0.19.5.jar` with `necromancer-1.3.1-fabric-0.19.5.jar`.
+- Skeletons summoned before the update keep their old gear.
+- Bare-headed army skeletons burn in daylight like normal skeletons, so daytime armies thin out faster.
+
+### Changed
+- **Longer cooldowns:**
+
+  | Attack | Before | Now |
+  |---|---|---|
+  | Bone spikes | 5 s | 7 s |
+  | Soul skull | 4 s | 6 s |
+  | Aura | 12 s | 16 s |
+  | Staff sweep | 3 s | 4 s |
+
+- **A breather between spells.** After any spell, no other spell starts for 1.5 seconds, so attacks come in waves instead of a constant stream.
+- **Rest after summoning.** After raising an army, the Necromancer waits 5 seconds before casting again, so its skeletons do the fighting for a while. The staff sweep still works during the pause, so it can defend itself up close.
+- **Mostly swords.**
+  - Army skeletons now carry swords about 75% of the time and spears about 25% (was 50/50). Iron or stone is still a coin flip.
+  - Shield bearers roll the same way, so most now carry a sword and shield.
+- **Mixed helmets.** About 50% chainmail, 15% iron, and 35% bare-headed (was always chainmail).
+- All the new numbers (`SPELL_GAP`, `SUMMON_RECOVERY`, `SPEAR_CHANCE`, helmet chances, cooldowns) are in `NecromancerConfig.java`.
+
+### Added
+- New automated test that equips 400 army skeletons and checks the mix: mostly swords, some spears, and chainmail, iron and bare heads (30 tests total).
+
 ## [1.3.0] - 2026-11-22 — The Bone & Soul update
 
 Necromancers become real mini-bosses with their own attacks, worthwhile loot, and a rare staff you can wield yourself.
@@ -186,6 +216,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0
 [1.2.1]: ../../releases/tag/v1.2.1
 [1.2.0]: ../../releases/tag/v1.2.0

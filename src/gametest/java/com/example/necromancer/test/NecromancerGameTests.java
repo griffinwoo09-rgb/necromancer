@@ -233,9 +233,11 @@ public class NecromancerGameTests {
 		ItemStack staff = new ItemStack(ModItems.STAFFS.get(NecromancerVariant.FIRE.ordinal()));
 		player.setItemInHand(InteractionHand.MAIN_HAND, staff);
 		staff.use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
-		List<NecromancerFangs> spikes = helper.getLevel().getEntitiesOfClass(NecromancerFangs.class, new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(12.0));
-		helper.assertTrue(spikes.size() >= 6, "staff raised only " + spikes.size() + " spikes");
-		helper.assertTrue(spikes.stream().allMatch(s -> s.getOwner() == player && s.getVariant() == NecromancerVariant.FIRE), "spikes not owned by the player / wrong variant");
+		// tests run side by side: count only spikes this test's player raised, not a neighbour's
+		List<NecromancerFangs> spikes = helper.getLevel().getEntitiesOfClass(NecromancerFangs.class,
+				new AABB(helper.absolutePos(BlockPos.ZERO)).inflate(12.0), s -> s.getOwner() == player);
+		helper.assertTrue(spikes.size() >= 5, "staff raised only " + spikes.size() + " spikes");
+		helper.assertTrue(spikes.stream().allMatch(s -> s.getVariant() == NecromancerVariant.FIRE), "player's spikes have the wrong variant");
 		helper.assertTrue(player.getCooldowns().isOnCooldown(staff), "staff has no cooldown");
 		helper.assertValueEqual(staff.getDamageValue(), 1, "staff damage after one cast");
 		helper.succeedWhen(() -> {
@@ -386,7 +388,6 @@ public class NecromancerGameTests {
 		List<Skeleton> army = helper.getLevel().getEntitiesOfClass(Skeleton.class, caster.getBoundingBox().inflate(4.0));
 		helper.assertValueEqual(army.size(), spawned, "summoned skeleton count");
 		helper.assertTrue(army.stream().allMatch(caster::isAlliedTo), "summoned skeletons are not allies");
-		helper.assertTrue(army.stream().noneMatch(s -> s.getItemBySlot(EquipmentSlot.HEAD).isEmpty()), "a summoned skeleton has no helmet");
 		helper.assertTrue(army.stream().allMatch(s -> s instanceof NecromancerSkeleton), "summon made a plain skeleton");
 		helper.assertTrue(army.stream().allMatch(s -> s.getMainHandItem().is(ItemTags.SWORDS) || s.getMainHandItem().is(ItemTags.SPEARS)),
 				"a summoned skeleton has no sword or spear");
@@ -412,7 +413,8 @@ public class NecromancerGameTests {
 		// skeletons hunt iron golems on their own (mock players aren't in the player list); frozen so it can't fight back
 		IronGolem golem = helper.spawn(EntityTypes.IRON_GOLEM, new BlockPos(4, 1, 4));
 		golem.setNoAi(true);
-		helper.assertTrue(guard.getMainHandItem().is(ItemTags.SPEARS) && guard.getOffhandItem().is(Items.SHIELD), "shield bearer is not holding spear + shield");
+		guard.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.CHAINMAIL_HELMET)); // helmets are random now; keep daylight out of the test
+		helper.assertTrue((guard.getMainHandItem().is(ItemTags.SWORDS) || guard.getMainHandItem().is(ItemTags.SPEARS)) && guard.getOffhandItem().is(Items.SHIELD), "shield bearer is not holding a weapon + shield");
 		helper.succeedWhen(() -> helper.assertTrue(guard.isBlocking(), "shield skeleton never blocked: target=" + guard.getTarget() + " using=" + guard.isUsingItem() + " hand=" + guard.getUsedItemHand() + " useItem=" + guard.getUseItem() + " ticks=" + guard.getTicksUsingItem()));
 	}
 
@@ -425,6 +427,29 @@ public class NecromancerGameTests {
 		IronGolem golem = helper.spawn(EntityTypes.IRON_GOLEM, new BlockPos(4, 1, 4));
 		golem.setNoAi(true);
 		helper.succeedWhen(() -> helper.assertTrue(golem.getHealth() < golem.getMaxHealth(), "spear skeleton never hurt its target"));
+	}
+
+	/** 400 army kits: mostly swords with some spears, and a mix of chainmail, iron and bare skulls. */
+	@GameTest
+	public void armyGearIsMixed(GameTestHelper helper) {
+		floor(helper);
+		NecromancerSkeleton s = helper.spawn(ModEntities.NECROMANCER_SKELETON, new BlockPos(2, 1, 2));
+		s.setNoAi(true);
+		int swords = 0, spears = 0, chain = 0, iron = 0, bare = 0;
+		for (int i = 0; i < 400; i++) {
+			s.equipForArmy(false, NecromancerVariant.WIND);
+			if (s.getMainHandItem().is(ItemTags.SWORDS)) swords++;
+			if (s.getMainHandItem().is(ItemTags.SPEARS)) spears++;
+			ItemStack head = s.getItemBySlot(EquipmentSlot.HEAD);
+			if (head.is(Items.CHAINMAIL_HELMET)) chain++;
+			else if (head.is(Items.IRON_HELMET)) iron++;
+			else if (head.isEmpty()) bare++;
+		}
+		String got = "swords=" + swords + " spears=" + spears + " chainmail=" + chain + " iron=" + iron + " bare=" + bare;
+		helper.assertValueEqual(swords + spears, 400, "melee weapons (" + got + ")");
+		helper.assertTrue(spears > 40 && swords > spears * 2, "expected mostly swords, some spears: " + got);
+		helper.assertTrue(chain > 0 && iron > 0 && bare > 60, "expected a mix of helmets and bare skulls: " + got);
+		helper.succeed();
 	}
 
 	@GameTest

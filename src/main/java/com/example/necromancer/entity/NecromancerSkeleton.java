@@ -118,15 +118,17 @@ public class NecromancerSkeleton extends Skeleton {
 	/** Melee kit for the army; nothing is droppable, so the summons can't be farmed for gear. */
 	public void equipForArmy(boolean shieldBearer, NecromancerVariant variant) {
 		boolean iron = this.random.nextBoolean();
-		ItemStack weapon;
-		if (shieldBearer || this.random.nextBoolean()) {
-			weapon = new ItemStack(iron ? Items.IRON_SPEAR : Items.STONE_SPEAR);
-		} else {
-			weapon = new ItemStack(iron ? Items.IRON_SWORD : Items.STONE_SWORD);
-		}
+		// mostly swords; spears are the rarer pick (shield bearers roll the same way)
+		ItemStack weapon = this.random.nextFloat() < NecromancerConfig.SPEAR_CHANCE
+				? new ItemStack(iron ? Items.IRON_SPEAR : Items.STONE_SPEAR)
+				: new ItemStack(iron ? Items.IRON_SWORD : Items.STONE_SWORD);
 		setItemSlot(EquipmentSlot.MAINHAND, weapon); // also swaps the bow AI for melee
 		setItemSlot(EquipmentSlot.OFFHAND, shieldBearer ? variant.makeShield(level().registryAccess()) : ItemStack.EMPTY);
-		setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.CHAINMAIL_HELMET)); // survives desert daylight
+		// a mixed rabble: chainmail, iron, or bare skulls (those burn in daylight and seek shade, like any skeleton)
+		float helmet = this.random.nextFloat();
+		setItemSlot(EquipmentSlot.HEAD, helmet < NecromancerConfig.CHAINMAIL_HELMET_CHANCE ? new ItemStack(Items.CHAINMAIL_HELMET)
+				: helmet < NecromancerConfig.CHAINMAIL_HELMET_CHANCE + NecromancerConfig.IRON_HELMET_CHANCE ? new ItemStack(Items.IRON_HELMET)
+				: ItemStack.EMPTY);
 		for (EquipmentSlot slot : EquipmentSlot.values()) {
 			setDropChance(slot, 0.0F); // includes any random armor the normal skeleton setup handed out
 		}
