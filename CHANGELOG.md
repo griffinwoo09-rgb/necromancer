@@ -4,6 +4,27 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.3.3] - 2026-11-22 — Fair fights
+
+Fixes from a code audit.
+
+### ⚠️ Upgrade notes
+- No breaking changes. Replace `necromancer-1.3.2-fabric-0.19.5.jar` with `necromancer-1.3.3-fabric-0.19.5.jar`.
+
+### Fixed
+- **Soul skulls can now actually be punched back.**
+  - In 26.3, only projectiles in the `minecraft:redirectable_projectile` tag can be deflected, and the soul skull wasn't in it, so hitting one did nothing.
+  - Even when deflected, it kept homing in on the player who hit it.
+  - Now a punched skull flies home, homing in on the Necromancer that cast it, at its normal speed.
+- **The staff sweep no longer hits through walls.** It needs line of sight to start, and only hits what the Necromancer can see, so hiding behind a block works.
+- **The pause between spells is now as long as intended.** Since 1.3.1, the 1.5-second breather (5 seconds after summoning) was counted from the moment a spell fired, while the casting pose ran on for up to another second. The real pause after a spike cast was only about half a second. The pause now starts when the cast ends.
+
+### Added
+- New automated tests (31 total):
+  - A soul skull punched back as it arrives hits its own caster.
+  - The sweep can't hit a target behind a wall.
+  - A Necromancer fighting a player never starts a spell within 1.5 seconds of the last one ending.
+
 ## [1.3.2] - 2026-11-22 — Staff removed
 
 ### ⚠️ Upgrade notes
@@ -232,6 +253,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.3.3]: ../../releases/tag/v1.3.3
 [1.3.2]: ../../releases/tag/v1.3.2
 [1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0

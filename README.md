@@ -25,7 +25,7 @@ macOS / Linux:
 export JAVA_HOME=/opt/homebrew/opt/openjdk@25   # wherever your JDK 25 is
 ./gradlew build            # compile + jar in build/libs
 ./gradlew runClient        # play
-./gradlew runGameTest      # 28 headless tests: mixed army gear, armies never infight, mini-boss stats, homing soul skull, sweep arc, lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer (on death and when it disappears), fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
+./gradlew runGameTest      # 31 headless tests: punched soul skulls hit their caster, sweep blocked by walls, spells spaced out, mixed army gear, armies never infight, mini-boss stats, homing soul skull, sweep arc, lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer (on death and when it disappears), fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
 ./gradlew runClientGameTest  # opens the game, screenshots to build/run/clientGameTest/screenshots
 ```
 

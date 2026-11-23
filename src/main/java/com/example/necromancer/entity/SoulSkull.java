@@ -28,6 +28,8 @@ public class SoulSkull extends AbstractHurtingProjectile {
 	private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(SoulSkull.class, EntityDataSerializers.INT);
 	/** Server only, not saved: a reloaded skull just flies straight. */
 	private LivingEntity homingTarget;
+	/** Who cast it (server only): a punched-back skull homes in on its caster instead. */
+	private LivingEntity caster;
 
 	public SoulSkull(EntityType<? extends SoulSkull> type, Level level) {
 		super(type, level);
@@ -39,7 +41,22 @@ public class SoulSkull extends AbstractHurtingProjectile {
 		setDeltaMovement(direction.normalize().scale(NecromancerConfig.SOUL_SKULL_SPEED));
 		setPos(x, y, z);
 		this.homingTarget = target;
+		this.caster = owner;
 		setVariant(variant);
+	}
+
+	/**
+	 * Punched back (like a ghast fireball): whoever hit it becomes the owner, so it now seeks its caster instead of
+	 * circling back to the player who deflected it (and could no longer hit, being its owner).
+	 */
+	@Override
+	protected void onDeflection(boolean byAttack) {
+		super.onDeflection(byAttack);
+		// vanilla gives a punched projectile acceleration; with no drag that would speed it up forever, so keep it steady
+		this.accelerationPower = 0.0;
+		Vec3 v = getDeltaMovement();
+		if (v.lengthSqr() > 1.0E-6) setDeltaMovement(v.normalize().scale(NecromancerConfig.SOUL_SKULL_SPEED));
+		this.homingTarget = caster != null && caster != getOwner() ? caster : null;
 	}
 
 	@Override

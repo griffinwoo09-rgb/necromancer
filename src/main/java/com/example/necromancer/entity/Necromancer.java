@@ -254,7 +254,7 @@ public class Necromancer extends SpellcasterIllager {
 		public boolean canUse() {
 			LivingEntity target = getTarget();
 			double r = NecromancerConfig.SWEEP_TRIGGER_RANGE;
-			return target != null && target.isAlive() && !isCastingSpell() && tickCount >= nextSweep && distanceToSqr(target) < r * r;
+			return target != null && target.isAlive() && !isCastingSpell() && tickCount >= nextSweep && distanceToSqr(target) < r * r && hasLineOfSight(target);
 		}
 
 		@Override
@@ -290,7 +290,7 @@ public class Necromancer extends SpellcasterIllager {
 		Vec3 facing = Vec3.directionFromRotation(0.0F, getYRot());
 		int hit = 0;
 		for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(reach, 1.0, reach),
-				e -> e != this && e.isAlive() && !e.isSpectator() && !isAlliedTo(e))) {
+				e -> e != this && e.isAlive() && !e.isSpectator() && !isAlliedTo(e) && hasLineOfSight(e))) { // no hitting through walls
 			Vec3 to = new Vec3(e.getX() - getX(), 0.0, e.getZ() - getZ());
 			if (to.lengthSqr() > reach * reach || to.lengthSqr() < 1.0E-4 || to.normalize().dot(facing) < halfArc) continue;
 			if (e.hurtServer(server, damageSources().mobAttack(this), NecromancerConfig.SWEEP_DAMAGE)) {
@@ -332,7 +332,8 @@ public class Necromancer extends SpellcasterIllager {
 		@Override
 		public void stop() {
 			super.stop();
-			spellRestUntil = Math.max(spellRestUntil, tickCount + restTicks());
+			// the goal ends when the spell fires, but the cast pose runs on for spellCastingTickCount: rest from the end of that
+			spellRestUntil = Math.max(spellRestUntil, tickCount + spellCastingTickCount + restTicks());
 		}
 
 		protected int restTicks() {

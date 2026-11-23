@@ -5,6 +5,7 @@ import com.example.necromancer.NecromancerConfig;
 import com.example.necromancer.entity.Necromancer;
 import com.example.necromancer.entity.NecromancerFangs;
 import com.example.necromancer.entity.NecromancerVariant;
+import com.example.necromancer.entity.SoulSkull;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -181,6 +182,79 @@ public class NecromancerGameTests {
 			helper.assertTrue(pig.hasEffect(MobEffects.POISON), "pig was not poisoned by the skull");
 			helper.assertTrue(pig.getHealth() < start, "pig took no damage from the skull");
 		});
+	}
+
+	/** Punched back as it arrives, a soul skull stops chasing the player and flies home to hit its own caster. */
+	@GameTest(maxTicks = 120)
+	public void punchedSoulSkullHitsItsCaster(GameTestHelper helper) {
+		for (int x = 0; x < 9; x++) for (int z = 0; z < 13; z++) helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+		Necromancer caster = helper.spawn(ModEntities.NECROMANCER, new BlockPos(4, 1, 1));
+		caster.setNoAi(true);
+		caster.setVariant(NecromancerVariant.WITHER);
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		player.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+		Vec3 at = helper.absoluteVec(new Vec3(4.5, 1, 9.5));
+		player.snapTo(at.x, at.y, at.z, 180.0F, 5.0F); // facing the caster
+		helper.getLevel().addFreshEntity(player);
+		SoulSkull skull = caster.fireSoulSkull(helper.getLevel(), player, 0.0F);
+		boolean[] punched = {false};
+		helper.onEachTick(() -> {
+			if (!punched[0] && skull.isAlive() && skull.distanceTo(player) < 2.5F) {
+				player.attack(skull); // the punch
+				punched[0] = true;
+				helper.assertTrue(skull.getOwner() == player, "punch did not deflect the skull (owner " + skull.getOwner() + ")");
+			}
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(punched[0], "skull never reached the player");
+			helper.assertTrue(caster.getHealth() < caster.getMaxHealth(), "deflected skull never hit its caster");
+		});
+	}
+
+	/** A target behind a wall is safe from the sweep. */
+	@GameTest
+	public void staffSweepDoesNotHitThroughWalls(GameTestHelper helper) {
+		floor(helper);
+		Necromancer n = helper.spawn(ModEntities.NECROMANCER, new BlockPos(2, 1, 1));
+		n.setNoAi(true);
+		n.setYRot(0.0F); // facing +z
+		n.setYBodyRot(0.0F);
+		helper.setBlock(new BlockPos(2, 1, 2), Blocks.STONE);
+		helper.setBlock(new BlockPos(2, 2, 2), Blocks.STONE);
+		Pig hidden = helper.spawn(EntityTypes.PIG, new BlockPos(2, 1, 3));
+		helper.assertValueEqual(n.sweep(helper.getLevel()), 0, "entities hit through the wall");
+		helper.assertValueEqual(hidden.getHealth(), hidden.getMaxHealth(), "pig behind the wall health");
+		helper.succeed();
+	}
+
+	/** After a spell's cast pose ends, no new spell starts for at least SPELL_GAP ticks. */
+	@GameTest(maxTicks = 400)
+	public void spellsAreSpacedOut(GameTestHelper helper) {
+		for (int x = 0; x < 9; x++) for (int z = 0; z < 13; z++) helper.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+		Necromancer n = helper.spawn(ModEntities.NECROMANCER, new BlockPos(4, 1, 1));
+		Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+		player.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.RESISTANCE, 400, 4)); // survive the test
+		Vec3 at = helper.absoluteVec(new Vec3(4.5, 1, 9.5));
+		player.snapTo(at.x, at.y, at.z);
+		helper.getLevel().addFreshEntity(player);
+		n.setTarget(player);
+		int[] state = {0, -1, 0}; // was casting (0/1), tick the last cast ended, casts seen
+		int[] tick = {0};
+		helper.onEachTick(() -> {
+			tick[0]++;
+			if (n.getTarget() != player) n.setTarget(player);
+			boolean casting = n.isCastingSpell();
+			if (casting && state[0] == 0) {
+				state[2]++;
+				if (state[1] >= 0) {
+					helper.assertTrue(tick[0] - state[1] >= NecromancerConfig.SPELL_GAP,
+							"a new spell started " + (tick[0] - state[1]) + " ticks after the last one ended");
+				}
+			}
+			if (!casting && state[0] == 1) state[1] = tick[0];
+			state[0] = casting ? 1 : 0;
+		});
+		helper.succeedWhen(() -> helper.assertTrue(state[2] >= 3, "only " + state[2] + " spells cast so far"));
 	}
 
 	@GameTest
