@@ -4,6 +4,26 @@ All notable changes to this mod. Format based on [Keep a Changelog](https://keep
 
 Requirements for every release: Minecraft 26.3, Fabric Loader 0.19.5 or newer, Fabric API, Java 25.
 
+## [1.2.1] - 2026-11-22 — Maintenance
+
+Fixes from a code audit. Gameplay is unchanged.
+
+### ⚠️ Upgrade notes
+- No breaking changes. Replace `necromancer-1.2.0-fabric-0.19.5.jar` with `necromancer-1.2.1-fabric-0.19.5.jar`.
+
+### Fixed
+- **Lightning shock.** The extra 3 damage now lands immediately after the fang bite, instead of waiting in a queue until the end of the server tick. Quitting a world in the exact tick a shock landed could apply it to an entity from the closed world; that can no longer happen.
+- **Reproducible builds.** Pinned the Fabric Loom build plugin to `1.19.4` instead of the moving `1.19-SNAPSHOT`, so rebuilding a tagged release gives the same result.
+
+### Added
+- New automated test for the skeleton army's once-a-second summoner check (23 tests total):
+  - The army stays while its Necromancer is alive.
+  - The army crumbles after the Necromancer disappears without dying (despawned or removed).
+- README: Windows build steps (PowerShell) and the Windows command for the texture generator.
+
+### Removed
+- The end-of-tick shock queue and its server-tick hook (12 lines).
+
 ## [1.2.0] - 2026-11-22 — The Storm update
 
 A fifth Necromancer arrives, every pose got reworked, and the staff no longer cuts through the body.
@@ -114,6 +134,7 @@ The Sorcerer is now the **Necromancer**, and its shield-bearing skeletons fight 
 ### Fixed
 - The mod refused to load on Fabric Loader 0.19.5 ("requires version 0.20.1 or later of mod 'Fabric Loader'"). The minimum is now 0.19.5. Nothing else changed from 1.0.0.
 
+[1.2.1]: ../../releases/tag/v1.2.1
 [1.2.0]: ../../releases/tag/v1.2.0
 [1.1.0]: ../../releases/tag/v1.1.0
 [1.0.1]: ../../releases/tag/v1.0.1

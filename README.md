@@ -12,14 +12,20 @@ Versions: Minecraft 26.3 · Fabric Loader 0.19.5 or newer · Fabric API 0.166.2+
 | Per-variant drops | `src/main/resources/data/necromancer/loot_table/entities/necromancer/<variant>.json` |
 | Which biomes it spawns in (default `#c:is_desert`) | `src/main/resources/data/necromancer/tags/worldgen/biome/spawns_necromancer.json` |
 | Particles, fang tint, cast sound per variant | `src/main/java/com/example/necromancer/entity/NecromancerVariant.java` |
-| Placeholder textures | `python3 tools/make_textures.py` |
+| Placeholder textures | `python3 tools/make_textures.py` (Windows: `python tools\make_textures.py`) |
 
 ## Run
+Needs Java 25. Windows (PowerShell):
 ```
-export JAVA_HOME=/opt/homebrew/opt/openjdk@25
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-25.0.5.10002-hotspot"   # wherever your JDK 25 is
+.\gradlew build
+```
+macOS / Linux:
+```
+export JAVA_HOME=/opt/homebrew/opt/openjdk@25   # wherever your JDK 25 is
 ./gradlew build            # compile + jar in build/libs
 ./gradlew runClient        # play
-./gradlew runGameTest      # 22 headless tests: lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer, fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
+./gradlew runGameTest      # 23 headless tests: lightning shock (no real bolt), variant banner shields, real drop rolls per variant (gold, scrap, no witch loot), army crumbles with its Necromancer (on death and when it disappears), fang effects, auras (spectators skipped), skeleton army + helmets, no banners or raids, orphaned fangs, spear attacks, gear never drops, case-insensitive variants (typos fall back to random), spawn eggs, loot table, desert-only spawning
 ./gradlew runClientGameTest  # opens the game, screenshots to build/run/clientGameTest/screenshots
 ```
 

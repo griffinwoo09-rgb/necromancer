@@ -158,6 +158,28 @@ public class NecromancerGameTests {
 		helper.succeed();
 	}
 
+	/** The once-a-second summoner check: the army stays while its Necromancer lives, and crumbles once it is gone without dying. */
+	@GameTest(maxTicks = 300)
+	public void armyOutlivesNoLivingNecromancerForLong(GameTestHelper helper) {
+		floor(helper);
+		Necromancer caster = helper.spawn(ModEntities.NECROMANCER, new BlockPos(2, 1, 2));
+		caster.setNoAi(true);
+		int spawned = caster.summonSkeletons(helper.getLevel());
+		helper.assertTrue(spawned > 0, "no skeletons were summoned");
+		AABB area = caster.getBoundingBox().inflate(8.0);
+		helper.runAfterDelay(120, () -> {
+			// well past the 5-check limit: a living summoner must keep its army
+			helper.assertValueEqual(helper.getLevel().getEntitiesOfClass(NecromancerSkeleton.class, area).size(), spawned,
+					"skeletons left while their Necromancer was still alive");
+			caster.discard(); // gone without dying, like a despawn or /kill on an unloaded mob: no die() cleanup
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(caster.isRemoved(), "Necromancer not removed yet");
+			helper.assertTrue(helper.getLevel().getEntitiesOfClass(NecromancerSkeleton.class, area).isEmpty(),
+					"army still standing after its Necromancer disappeared");
+		});
+	}
+
 	@GameTest(maxTicks = 40)
 	public void armyCrumblesWhenNecromancerDies(GameTestHelper helper) {
 		floor(helper);

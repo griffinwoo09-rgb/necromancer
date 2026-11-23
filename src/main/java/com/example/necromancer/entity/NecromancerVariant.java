@@ -2,12 +2,10 @@ package com.example.necromancer.entity;
 
 import com.example.necromancer.NecromancerConfig;
 import com.example.necromancer.NecromancerMod;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
@@ -136,17 +134,6 @@ public enum NecromancerVariant implements StringRepresentable {
 	/** Last game time a cosmetic bolt struck each target, so a ring of fangs doesn't call down five at once. */
 	private static final Map<LivingEntity, Long> LAST_BOLT = new WeakHashMap<>();
 
-	/** Shock damage waiting for the end of the server tick (see {@link #shock}). */
-	private static final List<Runnable> PENDING_SHOCKS = new ArrayList<>();
-
-	/** Called at the end of every server tick by NecromancerMod. */
-	public static void applyPendingShocks() {
-		if (PENDING_SHOCKS.isEmpty()) return;
-		List<Runnable> due = new ArrayList<>(PENDING_SHOCKS);
-		PENDING_SHOCKS.clear();
-		due.forEach(Runnable::run);
-	}
-
 	/**
 	 * Lightning hit: a visual-only bolt (thunder and flash, but no fire, no damage, no creeper/pig/villager conversion),
 	 * then extra shock damage and a short Slowness stun.
@@ -165,14 +152,12 @@ public enum NecromancerVariant implements StringRepresentable {
 			}
 		}
 		level.sendParticles(ParticleTypes.ELECTRIC_SPARK, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 16, 0.3, 0.5, 0.3, 0.2);
-		// The shock lands at the end of the tick: any hit dealt from inside the bite's own damage handling is rejected.
-		// Sourced from the caster (never the fang), so it can't re-trigger the fang hook in NecromancerMod.
-		DamageSource source = caster != null ? level.damageSources().indirectMagic(caster, caster) : level.damageSources().magic();
-		PENDING_SHOCKS.add(() -> {
-			if (!target.isAlive()) return;
+		if (target.isAlive()) {
 			target.damageCooldownTime = 0; // the bite just started the hit cooldown, which would swallow the smaller shock
-			target.hurtServer(level, source, NecromancerConfig.LIGHTNING_SHOCK_DAMAGE);
-		});
+			// sourced from the caster (never the fang), so it can't re-trigger the fang hook in NecromancerMod
+			target.hurtServer(level, caster != null ? level.damageSources().indirectMagic(caster, caster) : level.damageSources().magic(),
+					NecromancerConfig.LIGHTNING_SHOCK_DAMAGE);
+		}
 		target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, NecromancerConfig.LIGHTNING_STUN_TICKS, NecromancerConfig.LIGHTNING_STUN_AMPLIFIER), caster);
 	}
 
